@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><notation:Diagram xmlns:notation="http://www.eclipse.org/gmf/runtime/1.0.2/notation" xmlns:ecore="http://www.eclipse.org/emf/2002/Ecore" xmlns:xmi="http://www.omg.org/XMI" measurementUnit="Pixel" name="DefaultName" type="EcoreTools" xmi:id="_bHNpEeqPEd-cf4p1YNxwtA" xmi:version="2.0">
-  <styles xmi:id="_bHOQIOqPEd-cf4p1YNxwtA" xmi:type="notation:DiagramStyle"/>
-  <element href="model.ecore#/" xmi:type="ecore:EPackage"/>
-</notation:Diagram>
