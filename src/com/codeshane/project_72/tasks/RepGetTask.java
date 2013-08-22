@@ -18,9 +18,7 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.protocol.HttpContext;
 
-import android.content.ContentResolver;
 import android.net.Uri;
-import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -32,10 +30,9 @@ public class RepGetTask extends AsyncTask<Uri, Integer, HttpResponse> {
 	public static final String	TAG	= RepGetTask.class.getPackage().getName() + "." + RepGetTask.class.getSimpleName();
 
 	/** The response listener. Must be set in constructor. */
-	private OnHttpResponseListener mListener;
+	protected OnHttpResponseListener mListener;
 
-//	private AndroidHttpClient httpClient = null;
-	private HttpClient httpClient;
+	protected HttpClient httpClient;
     {
     	HttpParams httpParameters = new BasicHttpParams();
         HttpConnectionParams.setConnectionTimeout(httpParameters, 5000);
@@ -43,21 +40,18 @@ public class RepGetTask extends AsyncTask<Uri, Integer, HttpResponse> {
         httpClient = new DefaultHttpClient(httpParameters);
     }
 
-    private HttpUriRequest httpUriRequest = null;
-
-	private ContentResolver	resolver;
+    protected HttpUriRequest httpUriRequest = null;
 
 	/** @see OnHttpResponseListener */
 	public RepGetTask(OnHttpResponseListener onHttpResponseListener) {
 		super();
 		if (null==onHttpResponseListener) throw new IllegalArgumentException();
 		this.mListener = onHttpResponseListener;
-//		this.httpClient = AndroidHttpClient.newInstance("");//XXX //no ssl caching necessary
 	}
 
 
 	/** @see OnHttpResponseListener */
-	private RepGetTask() { super(); mListener=null; }
+	private RepGetTask() { super(); }
 
 	/** @see android.os.AsyncTask#onCancelled() */
 	@Override protected void onCancelled () {
