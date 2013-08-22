@@ -12,6 +12,7 @@
 	<artifactId>project-72</artifactId>
 	<version>0.0.3-SNAPSHOT</version>
 	<name>My Reps</name>
+	<packaging>pom</packaging>
 
 	<description>
         Find Representatives contact information.
@@ -38,10 +39,13 @@
 			<type>jar</type>
 			<scope>provided</scope>
 		</dependency>
+		<!-- Watch out for code formatters adding line-breaks:
+mvn install:install-file -Dfile=./android-support-v4.jar -DgroupId=com.google.android -DartifactId=support-v4 -Dversion=r18 -Dpackaging=jar
+		 -->
 		<dependency>
 			<groupId>com.google.android</groupId>
 			<artifactId>support-v4</artifactId>
-			<version>r7</version>
+			<version>r18</version>
 		</dependency>
 	</dependencies>
 
@@ -56,10 +60,10 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.1</version>
 				</plugin>
-				<plugin>
+				<!-- <plugin>
 					<artifactId>maven-assembly-plugin</artifactId>
 					<version>2.2.1</version>
-				</plugin>
+				</plugin> -->
 				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>2.7</version>
@@ -68,6 +72,14 @@
 					<artifactId>maven-source-plugin</artifactId>
 					<version>2.1.2</version>
 				</plugin>
+				<plugins>
+					<plugin>
+						<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+						<artifactId>android-maven-plugin</artifactId>
+						<version>3.1.1+</version>
+						<extensions>true</extensions>
+					</plugin>
+				</plugins>
 			</plugins>
 		</pluginManagement>
 		<plugins>
@@ -109,7 +121,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
+			<!-- <plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>
 					<descriptors>
@@ -127,6 +139,16 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin> -->
+			<plugin>
+				<groupId>com.jayway.maven.plugins.android.generation2</groupId>
+				<artifactId>android-maven-plugin</artifactId>
+				<configuration>
+					<sdk>
+      <!-- platform or api level (api level 4 = platform 1.6) -->
+						<platform>8</platform>
+					</sdk>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
