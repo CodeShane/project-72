@@ -1,7 +1,11 @@
+/* RepDetailFragment is part of a CodeShane™ solution.
+ * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
+ * See LICENSE file or visit codeshane.com for more information. */
+
 package com.codeshane.project_72;
 
-import com.codeshane.project_72.data.RepresentativeContent;
-import com.codeshane.project_72.data.RepresentativeContent.RepItem;
+import com.codeshane.project_72.model.RepItem;
+import com.codeshane.project_72.model.RepresentativesTable;
 
 import android.database.Cursor;
 import android.os.Bundle;
@@ -15,12 +19,21 @@ import android.widget.TextView;
  * This fragment is either contained in a {@link RepListActivity} in two-pane
  * mode (on tablets) or a {@link RepDetailActivity} on handsets. */
 public class RepDetailFragment extends Fragment {
+
 	/** The fragment argument representing the item ID that this fragment
 	 * represents. */
 	public static final String		ARG_ITEM_ID	= "item_id";
 
+	TextView rep_name;
+	TextView rep_district;
+	TextView rep_state;
+	TextView rep_office;
+	TextView rep_party;
+	TextView rep_phone;
+	TextView rep_link;
+
 	/** The content this fragment is presenting. */
-	private RepItem	mItem;
+	private RepItem	repItem;
 
 	/** Mandatory empty constructor for the fragment manager to instantiate the
 	 * fragment (e.g. upon screen orientation changes). */
@@ -28,56 +41,42 @@ public class RepDetailFragment extends Fragment {
 
 	@Override public void onCreate ( Bundle savedInstanceState ) {
 		super.onCreate(savedInstanceState);
-
 		if (getArguments().containsKey(ARG_ITEM_ID)) {
-			// Load the dummy content specified by the fragment
-			// arguments. In a real-world scenario, use a Loader
-			// TODO load content from a content provider.
-			mItem = RepresentativeContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
-
-			Cursor cursor = this.getActivity().getContentResolver().query(RepresentativeContent.CONTENT_URI, RepresentativeContent.RepresentativeTable.PROJECTION, RepresentativeContent.RepresentativeTable.Columns.ID.getName() + " = ?",new String[]{""}, "asc");
-
+			Cursor cursor = this.getActivity().getContentResolver().query(RepresentativesTable.CONTENT_URI, RepresentativesTable.PROJECTION, RepresentativesTable.Columns.ID.getName() + " = ? ",new String[]{ARG_ITEM_ID}, null);
+			if (cursor.moveToFirst()){
+				repItem = RepItem.update(repItem, cursor);
+				updateUi();
+			}
+			cursor.close();
 		}
 	}
 
-//	ViewHolder vh;
 	TextView tv;
 
 	/** Inflate the view layout and show the current data. */
 	@Override public View onCreateView ( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState ) {
 		View rootView = inflater.inflate(R.layout.fragment_rep_detail, container, false);
-
-		if (mItem != null) {
-			((TextView) rootView.findViewById(R.id.rep_name)).setText(mItem.name);
-			((TextView) rootView.findViewById(R.id.rep_district)).setText(mItem.district);
-			((TextView) rootView.findViewById(R.id.rep_state)).setText(mItem.state);
-			((TextView) rootView.findViewById(R.id.rep_office)).setText(mItem.office);
-			((TextView) rootView.findViewById(R.id.rep_party)).setText(mItem.party);
-			((TextView) rootView.findViewById(R.id.rep_phone)).setText(mItem.phone);
-			((TextView) rootView.findViewById(R.id.rep_website)).setText(mItem.website);
-		}
-
+		rep_name = (TextView)rootView.findViewById(R.id.rep_name);
+		rep_district = (TextView)rootView.findViewById(R.id.rep_district);
+		rep_state = (TextView)rootView.findViewById(R.id.rep_state);
+		rep_office = (TextView)rootView.findViewById(R.id.rep_office);
+		rep_party = (TextView)rootView.findViewById(R.id.rep_party);
+		rep_phone = (TextView)rootView.findViewById(R.id.rep_phone);
+		rep_link = (TextView)rootView.findViewById(R.id.rep_link);
 		return rootView;
+	}
 
-//		View rootView = inflater.inflate(R.layout.fragment_representative_detail, container, false);
-//
-//		mNameTextView = (TextView)rootView.findViewById(R.id.representativeNameTextView);
-//		mPartyTextView = (TextView)rootView.findViewById(R.id.partyTextView);
-//		mStateTextView = (TextView)rootView.findViewById(R.id.stateValueTextView);
-//		mDistrictTextView = (TextView)rootView.findViewById(R.id.districtValueTextView);
-//		mPhoneTextView = (TextView)rootView.findViewById(R.id.phoneValueTextView);
-//		mOfficeTextView = (TextView)rootView.findViewById(R.id.officeValueTextView);
-//		mLinkTextView = (TextView)rootView.findViewById(R.id.linkValueTextView);
-//
-//		mNameTextView.setText(mRepresentative.getName());
-//		mPartyTextView.setText(mRepresentative.getParty());
-//		mStateTextView.setText(mRepresentative.getState());
-//		mDistrictTextView.setText(mRepresentative.getDistrict());
-//		mPhoneTextView.setText(mRepresentative.getPhone());
-//		mOfficeTextView.setText(mRepresentative.getOffice());
-//		mLinkTextView.setText(mRepresentative.getLink());
-//
-//		return rootView;
+	/** Takes the place of a full-blown adapter since we just need to update a few fields. */
+	void updateUi(){
+		if (repItem != null) {
+			rep_name.setText(repItem.name);
+			rep_district.setText(repItem.district);
+			rep_state.setText(repItem.state);
+			rep_office.setText(repItem.office);
+			rep_party.setText(repItem.party);
+			rep_phone.setText(repItem.phone);
+			rep_link.setText(repItem.link);
+		}
 	}
 
 }

@@ -9,12 +9,13 @@
         android:targetSdkVersion="18" />
 
     <application
+        android:name="com.codeshane.project_72.RepApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.codeshane.project_72.MainActivity"
+            android:name="com.codeshane.project_72.RepListActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -22,6 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <provider
+            android:name="com.codeshane.project_72.providers.RepsContentProvider"
+            android:authorities="com.codeshane.project_72.data.RepresentativesProvider"
+            android:exported="false" />
     </application>
 
 </manifest>

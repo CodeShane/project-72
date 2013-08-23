@@ -1,3 +1,7 @@
+/* RepDetailActivity is part of a CodeShane™ solution.
+ * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
+ * See LICENSE file or visit codeshane.com for more information. */
+
 package com.codeshane.project_72;
 
 import android.content.Intent;
@@ -20,7 +24,9 @@ public class RepDetailActivity extends FragmentActivity {
 		setContentView(R.layout.activity_rep_detail);
 
 		// Show the Up button in the action bar.
-		getActionBar().setDisplayHomeAsUpEnabled(true);
+		//XXX
+		//getActionBar().setDisplayHomeAsUpEnabled(true);
+		//TODO
 
 		// savedInstanceState is non-null when there is fragment state
 		// saved from previous configurations of this activity

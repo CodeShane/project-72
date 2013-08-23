@@ -77,10 +77,10 @@
         android:text="@string/rep_office" />
 
     <Button
-        android:id="@+id/rep_website"
+        android:id="@+id/rep_link"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="@string/rep_website" />
+        android:text="@string/rep_link" />
 
 </RelativeLayout>

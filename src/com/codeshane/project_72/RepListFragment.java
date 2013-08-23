@@ -10,13 +10,14 @@ import android.support.v4.app.LoaderManager.LoaderCallbacks;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import com.codeshane.project_72.data.RepresentativeContent;
-import com.codeshane.project_72.data.RepresentativeContent.RepresentativeTable;
+import com.codeshane.project_72.model.RepresentativesTable;
 
 /** A list fragment representing a list of Reps. This fragment
  * also supports tablet devices by allowing list items to be given an
@@ -54,7 +55,7 @@ implements LoaderCallbacks<Cursor> {
 
 	/** A dummy implementation of the {@link Callbacks} interface that does
 	 * nothing. Used only when this fragment is not attached to an activity. */
-	private Callbacks sDummyCallbacks;
+//	private Callbacks sDummyCallbacks;
 	//= new Callbacks() { @Override public void onItemSelected ( String id ) {} };
 
 	/** Mandatory empty constructor for the fragment manager to instantiate the
@@ -66,27 +67,18 @@ implements LoaderCallbacks<Cursor> {
 		return (SimpleCursorAdapter) super.getListAdapter();
 	}
 
+	/** @see android.support.v4.app.LiptFragment#getListAdapter() */
 	@Override public void onCreate ( Bundle savedInstanceState ) {
 		super.onCreate(savedInstanceState);
-
-			getLoaderManager().initLoader(0, null, this);
-
-			setListAdapter(new SimpleCursorAdapter(getActivity(), android.R.layout.simple_list_item_1, null, new String[] { RepresentativeTable.TABLE_NAME }, new int[] { android.R.id.text1 },0));
-//			setListAdapter(new ArrayAdapter<DummyContent.DummyItem>(getActivity(), android.R.layout.simple_list_item_activated_1, android.R.id.text1, DummyContent.ITEMS));
-
-			SharedPreferences prefs = this.getActivity().getSharedPreferences("com.codeshane.project_72_preferences", 0);
-			setLastSearchZipCode(prefs.getString("lastZip", "12345"));
-
+		getLoaderManager().initLoader(0, null, this);
+		setListAdapter(new SimpleCursorAdapter(getActivity(), android.R.layout.simple_list_item_1, null, new String[] { RepresentativesTable.Columns.ID.getName(), RepresentativesTable.TABLE_NAME }, new int[] { android.R.id.text1,android.R.id.text1 },0));
+		mLastSearchZipCode = RepApplication.prefs().getString("lastZip", "12345");
 	}
 
-	/** @since Aug 21, 2013
-	 * @version Aug 21, 2013
-	 * @return void
-	 */
-	private void setLastSearchZipCode ( String string ) {
-		if (null==string||string.equalsIgnoreCase(mLastSearchZipCode)) { return; }
-		mLastSearchZipCode = string;
-
+	//Use API-11 layout
+	@Override
+	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+	    return inflater.inflate(R.layout.list_content, container, false);
 	}
 
 	@Override public void onViewCreated ( View view, Bundle savedInstanceState ) {
@@ -117,10 +109,10 @@ implements LoaderCallbacks<Cursor> {
 	@Override public void onListItemClick ( ListView listView, View view, int position, long id ) {
 		super.onListItemClick(listView, view, position, id);
 
-		// Notify the active callbacks interface (the activity, if the
-		// fragment is attached to one) that an item has been selected.
-		if (null==mCallbacks) { return; }
-		mCallbacks.onItemSelected(RepresentativeContent.ITEMS.get(position).id);
+		// Notify the active callbacks interface (the activity, if the fragment
+		// is attached to one) that an item has been selected.
+		if (null == mCallbacks) { return; }
+		mCallbacks.onItemSelected(String.valueOf(id)); // was .get(position).id
 	}
 
 	@Override public void onSaveInstanceState ( Bundle outState ) {
@@ -145,25 +137,23 @@ implements LoaderCallbacks<Cursor> {
 		} else {
 			getListView().setItemChecked(position, true);
 		}
-
 		mActivatedPosition = position;
 	}
-
 
 	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onCreateLoader(int, android.os.Bundle) */
 	@Override public Loader<Cursor> onCreateLoader ( int id, Bundle args ) {
 		mLoader = new CursorLoader(
 			getActivity(),
-			RepresentativeContent.CONTENT_URI,
+			RepresentativesTable.CONTENT_URI,
 			new String[] {
-				RepresentativeContent.RepresentativeTable.Columns.ID.getName(),
-				RepresentativeContent.RepresentativeTable.Columns.NAME.getName(),
-				RepresentativeContent.RepresentativeTable.Columns.ZIP.getName()
+				RepresentativesTable.Columns.ID.getName(),
+				RepresentativesTable.Columns.NAME.getName(),
+				RepresentativesTable.Columns.PARTY.getName()
 			},
-			RepresentativeContent.RepresentativeTable.Columns.ZIP.getName() +
-			" = ?",
+			RepresentativesTable.Columns.ZIP.getName() +
+			" = ? ",
 			new String[] { mLastSearchZipCode },
-			RepresentativeContent.RepresentativeTable.Columns.NAME.getName() +
+			RepresentativesTable.Columns.NAME.getName() +
 			" ASC");
 		return mLoader;
 	}
@@ -180,16 +170,3 @@ implements LoaderCallbacks<Cursor> {
 
 }
 
-//public void setZipCode(String zipCode) {
-//mZipCode = zipCode;
-//performRepSync();
-//getLoaderManager().restartLoader(0, null, this);
-//}
-//private void performRepSync() {
-//// fire off a request to synchronize the representatives at the current
-//// zip code
-//Intent i = new Intent(getActivity(), RepresentativeService.class);
-//i.putExtra(RepresentativeService.ARG_ZIP, mZipCode);
-//i.setAction(Intent.ACTION_SYNC);
-//getActivity().startService(i);
-//}
