@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.codeshane.project_72"
+    package="com.codeshane.representing"
     android:versionCode="1"
     android:versionName="1.0" >
 
@@ -8,14 +8,17 @@
         android:minSdkVersion="8"
         android:targetSdkVersion="18" />
 
+    <uses-permission android:name="com.codeshane.representing.permission.WRITE_REPRESENTATIVES" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:name="com.codeshane.project_72.RepApplication"
+        android:name="com.codeshane.representing.Representing"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
         <activity
-            android:name="com.codeshane.project_72.RepListActivity"
+            android:name="com.codeshane.representing.RepresentativeListActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,9 +28,12 @@
         </activity>
 
         <provider
-            android:name="com.codeshane.project_72.providers.RepsContentProvider"
-            android:authorities="com.codeshane.project_72.data.RepresentativesProvider"
-            android:exported="false" />
+            android:name="com.codeshane.representing.providers.RepsProvider"
+            android:authorities="com.codeshane.representing"
+            android:exported="false"
+            android:writePermission="com.codeshane.representing.permission.WRITE_REPRESENTATIVES" />
+
+        <service android:name="com.codeshane.representing.rest.RestIntentService" />
     </application>
 
 </manifest>

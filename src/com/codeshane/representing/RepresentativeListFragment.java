@@ -1,9 +1,8 @@
-package com.codeshane.project_72;
+package com.codeshane.representing;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -13,66 +12,80 @@ import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
 import android.widget.ListView;
 
-import com.codeshane.project_72.model.RepresentativesTable;
+import com.codeshane.representing.providers.RepresentingContract;
 
 /** A list fragment representing a list of Reps. This fragment
  * also supports tablet devices by allowing list items to be given an
  * 'activated' state upon selection. This helps indicate which item is
- * currently being viewed in a {@link RepDetailFragment}.
+ * currently being viewed in a {@link RepresentativeDetailFragment}.
  * <p>
- * Activities containing this fragment MUST implement the {@link Callbacks}
+ * Activities containing this fragment MUST implement the {@link OnItemSelectedListener}
  * interface. */
-public class RepListFragment
-extends ListFragment
+public class RepresentativeListFragment
+extends ListFragment //{
 implements LoaderCallbacks<Cursor> {
+
+	private static final String	PARAMS_REST	= "com.codeshane.represents.restful.args";
+	private static final String	PARAMS_LOADER = "com.codeshane.represents.loaders.args";
+	private static final String	TYPE_URI = "com.codeshane.type.uri";
+
+	/** Interface for notifying activities containing this fragment when
+	 * an item is selected. */
+	public interface OnItemSelectedListener {
+		/** Callback for when an item has been selected. */
+		public void onItemSelected ( String itemId );
+	}
+
+	/** The fragment's callback object, which is notified of list item
+	 * clicks. Must be implemented by all containing activities. */
+	private OnItemSelectedListener			mCallbacks;
 
 	/** The serialization (saved instance state) Bundle key representing the
 	 * activated item position. Only used on tablets. */
 	private static final String	STATE_ACTIVATED_POSITION	= "activated_position";
 
-	/** The fragment's current callback object, which is notified of list item
-	 * clicks. */
-	private Callbacks			mCallbacks;
 
 	/** The current activated item position. Only used on tablets. */
 	private int					mActivatedPosition			= ListView.INVALID_POSITION;
 
-	private Loader mLoader;
+	public static final String	PARAMS_LOADER_ZIP = "com.codeshane.represents.loaders.zip";
 
-	String mLastSearchZipCode = "12345";
-
-	/** A callback interface that all activities containing this fragment must
-	 * implement. This mechanism allows activities to be notified of item
-	 * selections. */
-	public interface Callbacks {
-		/** Callback for when an item has been selected. */
-		public void onItemSelected ( String id );
-	}
-
-	/** A dummy implementation of the {@link Callbacks} interface that does
-	 * nothing. Used only when this fragment is not attached to an activity. */
-//	private Callbacks sDummyCallbacks;
-	//= new Callbacks() { @Override public void onItemSelected ( String id ) {} };
+	private String mLastSearchZipCode;
 
 	/** Mandatory empty constructor for the fragment manager to instantiate the
 	 * fragment (e.g. upon screen orientation changes). */
-	public RepListFragment () {}
+	public RepresentativeListFragment () {}
 
 	/** @see android.support.v4.app.ListFragment#getListAdapter() */
 	@Override public SimpleCursorAdapter getListAdapter () {
 		return (SimpleCursorAdapter) super.getListAdapter();
 	}
 
-	/** @see android.support.v4.app.LiptFragment#getListAdapter() */
+	/** @see android.support.v4.app.ListFragment#getListAdapter() */
 	@Override public void onCreate ( Bundle savedInstanceState ) {
 		super.onCreate(savedInstanceState);
+		mLastSearchZipCode = Representing.prefs().getString(PARAMS_LOADER_ZIP, "12345");
+//		setListAdapter() moved to onActivityCreated for Loader, ContentProvider
+	}
+
+	/** @see android.support.v4.app.Fragment#onActivityCreated(android.os.Bundle) */
+	@Override public void onActivityCreated ( Bundle savedInstanceState ) {
+		super.onActivityCreated(savedInstanceState);
+
+	    // REST call parameters
+	    Bundle restArgs = new Bundle();
+	    restArgs.putString("mode", "get");
+
+		// Loader args for LoaderManager to use to maintain & reload Loaders state.
+//	    Bundle loaderArgs = new Bundle();
+//	    loaderArgs.putParcelable(PARAMS_REST, restArgs);
+//	    Uri loaderUri = Uri.withAppendedPath(RepresentingContract.CONTENT_URI_BYZIP, Uri.encode(mLastSearchZipCode));
+//	    loaderArgs.putParcelable(TYPE_URI, loaderUri);
+
 		getLoaderManager().initLoader(0, null, this);
-		setListAdapter(new SimpleCursorAdapter(getActivity(), android.R.layout.simple_list_item_1, null, new String[] { RepresentativesTable.Columns.ID.getName(), RepresentativesTable.TABLE_NAME }, new int[] { android.R.id.text1,android.R.id.text1 },0));
-		mLastSearchZipCode = RepApplication.prefs().getString("lastZip", "12345");
+		setListAdapter(new SimpleCursorAdapter(getActivity(), android.R.layout.simple_list_item_2, null, new String[] { RepresentingContract.Columns.NAME.getName(), RepresentingContract.Columns.PARTY.getName(), }, new int[] { android.R.id.text1, android.R.id.text2 },0));
 	}
 
 	//Use API-11 layout
@@ -93,10 +106,10 @@ implements LoaderCallbacks<Cursor> {
 	@Override public void onAttach ( Activity activity ) {
 		super.onAttach(activity);
 
-		// Activities containing this fragment must implement its callbacks.
-		if (!(activity instanceof Callbacks)) { throw new IllegalStateException("Activity must implement fragment's callbacks."); }
+		// Force Activities containing this fragment to implement its OnItemSelectedListener.
+		if (!(activity instanceof OnItemSelectedListener)) { throw new IllegalStateException("Activity must implement fragment's callbacks."); }
 
-		mCallbacks = (Callbacks) activity;
+		mCallbacks = (OnItemSelectedListener) activity;
 	}
 
 	@Override public void onDetach () {
@@ -109,10 +122,10 @@ implements LoaderCallbacks<Cursor> {
 	@Override public void onListItemClick ( ListView listView, View view, int position, long id ) {
 		super.onListItemClick(listView, view, position, id);
 
-		// Notify the active callbacks interface (the activity, if the fragment
+		// Notify callbacks interface (the activity, if the fragment
 		// is attached to one) that an item has been selected.
 		if (null == mCallbacks) { return; }
-		mCallbacks.onItemSelected(String.valueOf(id)); // was .get(position).id
+		mCallbacks.onItemSelected(String.valueOf(id)); // was: mCallbacks.onItemSelected(DummyContent.ITEMS.get(position).id);
 	}
 
 	@Override public void onSaveInstanceState ( Bundle outState ) {
@@ -137,36 +150,38 @@ implements LoaderCallbacks<Cursor> {
 		} else {
 			getListView().setItemChecked(position, true);
 		}
+		android.content.CursorLoader cl;
+
 		mActivatedPosition = position;
 	}
 
+	/** Columns used by the 'list' query. */
+	private static final String[] PROJECTION = {
+		RepresentingContract.Columns.NAME.getName(),
+		RepresentingContract.Columns.PARTY.getName()
+	};
+
 	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onCreateLoader(int, android.os.Bundle) */
-	@Override public Loader<Cursor> onCreateLoader ( int id, Bundle args ) {
-		mLoader = new CursorLoader(
-			getActivity(),
-			RepresentativesTable.CONTENT_URI,
-			new String[] {
-				RepresentativesTable.Columns.ID.getName(),
-				RepresentativesTable.Columns.NAME.getName(),
-				RepresentativesTable.Columns.PARTY.getName()
-			},
-			RepresentativesTable.Columns.ZIP.getName() +
-			" = ? ",
-			new String[] { mLastSearchZipCode },
-			RepresentativesTable.Columns.NAME.getName() +
-			" ASC");
-		return mLoader;
+	@Override public Loader<Cursor> onCreateLoader ( int arg0, Bundle loaderArgs ) {
+		Uri loaderUri = Uri.withAppendedPath(RepresentingContract.URI_BYZIP, Uri.encode(mLastSearchZipCode));
+
+        // Now create and return a CursorLoader that will take care of creating a Cursor for the data being displayed.
+        return
+        	new CursorLoader(
+        	getActivity(),
+        	loaderUri,
+        	PROJECTION,
+        	" " + RepresentingContract.Columns.ZIP.name() + " = ? ",
+        	new String[]{mLastSearchZipCode},
+        	RepresentingContract.Columns.NAME.getName() + " COLLATE LOCALIZED ASC");
 	}
+
 
 	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onLoadFinished(android.support.v4.content.Loader, java.lang.Object) */
-	@Override public void onLoadFinished ( Loader<Cursor> cursorLoader, Cursor cursor ) {
-		this.getListAdapter().swapCursor(cursor);
-	}
+	@Override public void onLoadFinished ( Loader<Cursor> loader, Cursor cursor ) {getListAdapter().swapCursor(cursor);}
 
 	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onLoaderReset(android.support.v4.content.Loader) */
-	@Override public void onLoaderReset ( Loader<Cursor> cursorLoader ) {
-		this.getListAdapter().swapCursor(null);
-	}
+	@Override public void onLoaderReset ( Loader<Cursor> loader ) {getListAdapter().swapCursor(null);}
 
 }
 

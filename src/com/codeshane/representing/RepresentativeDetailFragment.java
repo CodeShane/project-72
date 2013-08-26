@@ -2,81 +2,83 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72;
+package com.codeshane.representing;
 
-import com.codeshane.project_72.model.RepItem;
-import com.codeshane.project_72.model.RepresentativesTable;
+import com.codeshane.representing.providers.RepresentingContract;
 
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.TextView;
 
 /** A fragment representing a single Rep detail screen.
- * This fragment is either contained in a {@link RepListActivity} in two-pane
- * mode (on tablets) or a {@link RepDetailActivity} on handsets. */
-public class RepDetailFragment extends Fragment {
+ * This fragment is either contained in a {@link RepresentativeListActivity} in two-pane
+ * mode (on tablets) or a {@link RepresentativeDetailActivity} on handsets. */
+public class RepresentativeDetailFragment extends Fragment implements LoaderCallbacks<Cursor> {
 
-	/** The fragment argument representing the item ID that this fragment
-	 * represents. */
+	/** The extra-identifier for the item this fragment represents. */
 	public static final String		ARG_ITEM_ID	= "item_id";
 
-	TextView rep_name;
-	TextView rep_district;
-	TextView rep_state;
-	TextView rep_office;
-	TextView rep_party;
-	TextView rep_phone;
-	TextView rep_link;
-
-	/** The content this fragment is presenting. */
-	private RepItem	repItem;
+	/** Standard fragment doesn't have an adapter. */
+	private SimpleCursorAdapter mAdapter;
 
 	/** Mandatory empty constructor for the fragment manager to instantiate the
 	 * fragment (e.g. upon screen orientation changes). */
-	public RepDetailFragment () {}
+	public RepresentativeDetailFragment () {}
 
 	@Override public void onCreate ( Bundle savedInstanceState ) {
 		super.onCreate(savedInstanceState);
-		if (getArguments().containsKey(ARG_ITEM_ID)) {
-			Cursor cursor = this.getActivity().getContentResolver().query(RepresentativesTable.CONTENT_URI, RepresentativesTable.PROJECTION, RepresentativesTable.Columns.ID.getName() + " = ? ",new String[]{ARG_ITEM_ID}, null);
-			if (cursor.moveToFirst()){
-				repItem = RepItem.update(repItem, cursor);
-				updateUi();
-			}
-			cursor.close();
-		}
+		mAdapter = new SimpleCursorAdapter(getActivity(), R.layout.representative_details, null, new String[] { RepresentingContract.Columns.NAME.getName(), RepresentingContract.Columns.PARTY.getName(), }, new int[] { android.R.id.text1, android.R.id.text2 },0);
 	}
 
-	TextView tv;
+	/** @see android.support.v4.app.Fragment#onActivityCreated(android.os.Bundle) */
+	@Override public void onActivityCreated ( Bundle savedInstanceState ) {
+		super.onActivityCreated(savedInstanceState);
+		getLoaderManager().initLoader(0, null, this);//R.id.rep_name,R.id.rep_party
+	}
 
 	/** Inflate the view layout and show the current data. */
 	@Override public View onCreateView ( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState ) {
-		View rootView = inflater.inflate(R.layout.fragment_rep_detail, container, false);
-		rep_name = (TextView)rootView.findViewById(R.id.rep_name);
-		rep_district = (TextView)rootView.findViewById(R.id.rep_district);
-		rep_state = (TextView)rootView.findViewById(R.id.rep_state);
-		rep_office = (TextView)rootView.findViewById(R.id.rep_office);
-		rep_party = (TextView)rootView.findViewById(R.id.rep_party);
-		rep_phone = (TextView)rootView.findViewById(R.id.rep_phone);
-		rep_link = (TextView)rootView.findViewById(R.id.rep_link);
+		View rootView = inflater.inflate(R.layout.representative_detail_fragment, container, false);
+		getLoaderManager().initLoader(0, null, this);//R.id.rep_name,R.id.rep_party
 		return rootView;
 	}
 
-	/** Takes the place of a full-blown adapter since we just need to update a few fields. */
-	void updateUi(){
-		if (repItem != null) {
-			rep_name.setText(repItem.name);
-			rep_district.setText(repItem.district);
-			rep_state.setText(repItem.state);
-			rep_office.setText(repItem.office);
-			rep_party.setText(repItem.party);
-			rep_phone.setText(repItem.phone);
-			rep_link.setText(repItem.link);
-		}
+	/** Columns used by the 'detail' query. */
+	private static final String[] PROJECTION = RepresentingContract.PROJECTION;
+
+	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onCreateLoader(int, android.os.Bundle) */
+	@Override public Loader<Cursor> onCreateLoader ( int arg0, Bundle loaderArgs ) {
+		String mLastSearchZipCode = loaderArgs.getString(RepresentativeListFragment.PARAMS_LOADER_ZIP);
+//		String id = getArguments().getString(ARG_ITEM_ID);
+        Uri loaderUri = Uri.withAppendedPath(RepresentingContract.URI_BYZIP, Uri.encode(mLastSearchZipCode));
+
+        // Now create and return a CursorLoader that will take care of creating a Cursor for the data being displayed.
+        return
+        	new CursorLoader(getActivity(),
+        	loaderUri,
+        	PROJECTION,
+        	" " + RepresentingContract.Columns.ID.name() + " = ? ",
+        	new String[]{ mLastSearchZipCode },
+        	null);
 	}
 
+	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onLoaderReset(android.support.v4.content.Loader) */
+	@Override public void onLoaderReset ( Loader<Cursor> loader ) {
+		mAdapter.swapCursor(null);
+	}
+
+	/** @see android.support.v4.app.LoaderManager.LoaderCallbacks#onLoadFinished(android.support.v4.content.Loader, java.lang.Object) */
+	@Override public void onLoadFinished ( Loader<Cursor> loader, Cursor cursor ) {
+		mAdapter.swapCursor(cursor);
+	}
 }

@@ -9,7 +9,7 @@ import android.content.SharedPreferences;
 import android.os.Build;
 import android.util.Log;
 
-/** Can't use my Sprefs because they have androidannotations, I don't need them, and I'm a bit rushed so
+/** Can't use my Sprefs because it uses androidannotations, I don't need them, and I'm a bit rushed so
  * lets just make a utility tool real quick instead..
  * @author  Shane Ian Robinson <shane@codeshane.com>
  * @since   Aug 23, 2013

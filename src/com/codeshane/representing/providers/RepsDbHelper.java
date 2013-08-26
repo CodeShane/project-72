@@ -2,7 +2,7 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72.providers;
+package com.codeshane.representing.providers;
 
 import java.util.ArrayList;
 
@@ -12,18 +12,19 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.codeshane.project_72.meta.Table;
-import com.codeshane.util.DbUtils;
+import com.codeshane.representing.meta.Table;
+
+import static com.codeshane.util.Utils.*;
 
 /**
  * @author  Shane Ian Robinson <shane@codeshane.com>
  * @since   Aug 22, 2013
  * @version 1
  */
-public class DbHelper extends SQLiteOpenHelper {
-	public static final String	TAG	= DbHelper.class.getPackage().getName() + "." + DbHelper.class.getSimpleName();
+public class RepsDbHelper extends SQLiteOpenHelper {
+	public static final String	TAG	= RepsDbHelper.class.getPackage().getName() + "." + RepsDbHelper.class.getSimpleName();
 
-	DbHelper ( Context context, String name, int version, Table mTable ) {
+	RepsDbHelper ( Context context, String name, int version, Table mTable ) {
 		super(context, name, null, version);
 		this.mTables.add(mTable);
 	}
@@ -32,7 +33,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
 	ArrayList<Table> mTables = new ArrayList<Table>();
 
-	/** Synchronized access only. Get via {@link DbHelper#getDatabase(Context)} only. */
+	/** Synchronized access only. Get via {@link RepsDbHelper#getDatabase(Context)} only. */
 	private SQLiteDatabase mDatabase = null;
 
     /** Gets the cached database or loads it again.
@@ -52,15 +53,25 @@ public class DbHelper extends SQLiteOpenHelper {
         return mDatabase;
     }
 
+    /** Give the table the opportunity to create itself. If it returns true,
+     * the table will will be ignored.
+     * */
 	@Override public void onCreate ( SQLiteDatabase db ) {
 		for (Table t : mTables) {
-			DbUtils.createTable(db, t);
+			if (!t.create(db)) {
+				createTable(db, t);
+			};
 		}
 	}
 
+	/** Give the table the opportunity to upgrade itself. If it returns true, the
+	 * table will be deleted and re-created.
+	 * */
 	@Override public void onUpgrade ( SQLiteDatabase db, int oldVersion, int newVersion ) {
 		for (Table t : mTables) {
-			DbUtils.upgradeTable(db, t, oldVersion, newVersion);
+			if (t.upgrade(db, oldVersion, newVersion)) {
+				upgradeTable(db,t,oldVersion, newVersion);
+			}
 		}
 	}
 

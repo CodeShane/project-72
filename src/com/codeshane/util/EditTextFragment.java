@@ -2,7 +2,9 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72;
+package com.codeshane.util;
+
+import com.codeshane.representing.R;
 
 import android.app.Dialog;
 import android.os.Bundle;

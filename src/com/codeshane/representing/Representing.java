@@ -2,7 +2,7 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72;
+package com.codeshane.representing;
 
 import android.app.Application;
 import android.content.Context;
@@ -13,8 +13,8 @@ import android.content.SharedPreferences;
  * @since   Aug 22, 2013
  * @version 1
  */
-public class RepApplication extends Application {
-	public static final String	TAG	= RepApplication.class.getPackage().getName() + "." + RepApplication.class.getSimpleName();
+public class Representing extends Application {
+	public static final String	TAG	= Representing.class.getPackage().getName() + "." + Representing.class.getSimpleName();
 
 	private static Context mAppContext;
 	private static SharedPreferences mPrefs;

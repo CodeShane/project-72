@@ -2,11 +2,14 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72.model;
+package com.codeshane.representing.providers;
 
-import org.json.JSONArray;
+import java.util.ArrayList;
+
 import org.json.JSONException;
+import org.json.JSONObject;
 
+import android.content.ContentValues;
 import android.database.Cursor;
 
 /** Data holder representing a Representative instance. Data can be populated
@@ -16,10 +19,12 @@ import android.database.Cursor;
  * @author Shane Ian Robinson <shane@codeshane.com>
  * @since Aug 22, 2013
  * @version 1 */
-public class RepItem {
-	public static final String	TAG	= RepItem.class.getPackage().getName() + "." + RepItem.class.getSimpleName();
+public class RepresentativeItem {
+	public static final String	TAG	= RepresentativeItem.class.getPackage().getName() + "." + RepresentativeItem.class.getSimpleName();
 
-	public String id;
+	public static final String[] PROJECTION = {"id", "name", "party", "district", "state", "office", "phone", "link"};
+
+	public long id;
 	public String name;
 	public String party;
 	public String district;
@@ -28,8 +33,8 @@ public class RepItem {
 	public String phone;
 	public String link;
 
-	public RepItem ( String id, String name, String party, String district, String state, String office, String phone, String link ) {
-		this.id = id;
+	public RepresentativeItem ( long id, String name, String party, String district, String state, String office, String phone, String link ) {
+		this.id = -1;
 		this.name = name;
 		this.party = party;
 		this.district = district;
@@ -40,44 +45,42 @@ public class RepItem {
 	}
 
 	/** Populates an existing (or new if param is null) RepItem instance with
-	 * data from a cursor.
+	 * data from a {@code Cursor}.
 	 *
-	 * @return repItem (chainable) */
-	public static RepItem update ( RepItem repItem, Cursor c ) {
-		if (null == repItem) { return new RepItem(
-				c.getString(0), c.getString(1), c.getString(2), c.getString(3),
-				c.getString(4), c.getString(5), c.getString(6), c.getString(7)); }
-		repItem.id = c.getString(0);
-		repItem.name = c.getString(1);
-		repItem.party = c.getString(2);
-		repItem.district = c.getString(3);
-		repItem.state = c.getString(4);
-		repItem.office = c.getString(5);
-		repItem.phone = c.getString(6);
-		repItem.link = c.getString(7);
+	 * @return repItem (chainable)
+	 * @see Cursor */
+	public static RepresentativeItem update ( RepresentativeItem repItem, Cursor c ) {
+		if (null == repItem) { return new RepresentativeItem(
+				-1, c.getString(0), c.getString(1), c.getString(2),
+				c.getString(3), c.getString(4), c.getString(5), c.getString(6)); }
+		repItem.id = -1;
+		repItem.name = c.getString(0);
+		repItem.party = c.getString(1);
+		repItem.district = c.getString(2);
+		repItem.state = c.getString(3);
+		repItem.office = c.getString(4);
+		repItem.phone = c.getString(5);
+		repItem.link = c.getString(6);
 		return repItem;
 	}
 
 	/** Populates an existing (or new if param is null) RepItem instance with
 	 * data from a Json array.
 	 *
-	 * @return repItem (chainable) */
-	public static RepItem update ( RepItem repItem, JSONArray c ) {
-		try {
-			if (null == repItem) { return new RepItem(
-				c.getString(0), c.getString(1), c.getString(2), c.getString(3),
-				c.getString(4), c.getString(5), c.getString(6), c.getString(7)); }
-			repItem.id = c.getString(0);
-			repItem.name = c.getString(1);
-			repItem.party = c.getString(2);
-			repItem.district = c.getString(3);
-			repItem.state = c.getString(4);
-			repItem.office = c.getString(5);
-			repItem.phone = c.getString(6);
-			repItem.link = c.getString(7);
-		} catch (JSONException ex) {
-			ex.printStackTrace();
+	 * @return repItem (chainable) */ // JSONObject can use .getString(name)
+	public static RepresentativeItem update ( RepresentativeItem repItem, JSONObject object ) {
+		if (null == repItem) { return new RepresentativeItem(-1,
+			object.optString("name"),  object.optString("party"), object.optString("district"),
+			object.optString("state"), object.optString("office"),
+			object.optString("phone"), object.optString("link"));
 		}
+		repItem.name = object.optString("name", "");
+		repItem.party = object.optString("party", "");
+		repItem.district = object.optString("district", "");
+		repItem.state = object.optString("state", "");
+		repItem.office = object.optString("office", "");
+		repItem.phone = object.optString("phone", "");
+		repItem.link = object.optString("link", "");
 		return repItem;
 	}
 
@@ -86,8 +89,25 @@ public class RepItem {
 			+ phone + ", link=" + link + "]";
 	}
 
-	public JSONArray toJson() {
-		return new JSONArray().put(id).put(name).put(party).put(district).put(state).put(office).put(phone).put(link);
+	public JSONObject toJson() {
+		try {
+			return new JSONObject().put("id", id).put("name", name).put("party", party).put("district", district).put("state", state).put("office", office).put("phone", phone).put("link", link);
+		} catch (JSONException ex) {
+			throw new RuntimeException(ex);
+		}
+	}
+
+	public ContentValues toContentValues () {
+		ContentValues contentValues = new ContentValues();
+		contentValues.put("name", name);
+		contentValues.put("party", party);
+		contentValues.put("district", district);
+		contentValues.put("state", state);
+		contentValues.put("office", office);
+		contentValues.put("phone", phone);
+		contentValues.put("link", link);
+		return null;
+
 	}
 
 

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -5,10 +6,9 @@
     android:layout_marginLeft="16dp"
     android:layout_marginRight="16dp"
     android:baselineAligned="false"
-    android:divider="?android:attr/dividerHorizontal"
     android:orientation="horizontal"
     android:showDividers="middle"
-    tools:context=".RepListActivity" >
+    tools:context=".RepresentativeListActivity" >
 
     <!--
     This layout is a two-pane layout for the Reps
@@ -17,20 +17,19 @@
     that replace the single-pane version of the layout with
     this two-pane version.
 
-    For more on layout aliases, see:
-    http://developer.android.com/training/multiscreen/screensizes.html#TaskUseAliasFilters
+    For more on layout aliases, see:
     -->
 
     <fragment
         android:id="@+id/rep_list"
-        android:name="com.codeshane.project_72.RepListFragment"
+        android:name="com.codeshane.representing.RepresentativeListFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         tools:layout="@android:layout/list_content" />
 
     <FrameLayout
-        android:id="@+id/rep_detail_container"
+        android:id="@+id/representative_detail_container"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="3" />

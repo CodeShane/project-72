@@ -2,7 +2,7 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72.tasks;
+package com.codeshane.representing.rest;
 
 import java.io.IOException;
 
@@ -26,32 +26,30 @@ import android.util.Log;
  * @author Shane Ian Robinson <shane@codeshane.com>
  * @since Aug 19, 2013
  * @version 1 */
-public class RepGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
-	public static final String TAG = RepGetTask.class.getPackage().getName() + "." + RepGetTask.class.getSimpleName();
+public class HttpGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
+	public static final String TAG = HttpGetTask.class.getPackage().getName() + "." + HttpGetTask.class.getSimpleName();
 
 	/** The response listener. Must be set in constructor. */
 	protected OnHttpResponseListener mListener;
 
-	protected HttpClient httpClient;
-    {
-    	HttpParams httpParameters = new BasicHttpParams();
-        HttpConnectionParams.setConnectionTimeout(httpParameters, 5000);
-        HttpConnectionParams.setSoTimeout(httpParameters, 5000);
-        httpClient = new DefaultHttpClient(httpParameters);
-    }
+	protected HttpClient httpClient = null;
 
     protected HttpUriRequest httpUriRequest = null;
 
 	/** @see OnHttpResponseListener */
-	public RepGetTask(OnHttpResponseListener onHttpResponseListener) {
+	public HttpGetTask(OnHttpResponseListener onHttpResponseListener) {
 		super();
 		if (null==onHttpResponseListener) throw new IllegalArgumentException();
 		this.mListener = onHttpResponseListener;
+		HttpParams httpParameters = new BasicHttpParams();
+        HttpConnectionParams.setConnectionTimeout(httpParameters, 5000);
+        HttpConnectionParams.setSoTimeout(httpParameters, 5000);
+        httpClient = new DefaultHttpClient(httpParameters);
 	}
 
-	// no instances without data
+	// no instances without a listener.
 	@SuppressWarnings ( "unused" )
-	private RepGetTask() { super(); }
+	private HttpGetTask() { super(); }
 
 	/** @see android.os.AsyncTask#onCancelled() */
 	@Override protected void onCancelled () {
@@ -60,41 +58,44 @@ public class RepGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
 		if (null!=this.httpUriRequest) { this.httpUriRequest.abort(); }
 	}
 
-	/**
+	/** Begin visiting the given Uri(s) and returning the response(s) to the listener.
 	 * @see android.os.AsyncTask#doInBackground(java.lang.Object[]) */
 	@Override protected HttpResponse doInBackground ( Uri... args ) {
 		HttpResponse httpResponse = null;
 
 		for (Uri uri : args) {
-			httpUriRequest = new HttpGet(uri.toString());
-			if (null!=httpResponse) {
-				publishProgress(httpResponse);
-				httpResponse = null;
-			}
+			String uris = uri.toString();
+			httpUriRequest = new HttpGet(uris);
 
 			try {
 				httpResponse = httpClient.execute(httpUriRequest);
+				if (null!=httpResponse) {
+					httpResponse.addHeader(RestIntentService.EXTRA_URI_LOCAL,uris);
+					publishProgress(httpResponse);
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
+			} finally {
+				httpResponse = null;
 			}
-
 		}
 
-		return httpResponse;
+		return null;
 	}
 
 	/** Forwards responses to the listener.
 	 * @see android.os.AsyncTask#onProgressUpdate(java.lang.Object[]) */
-	@Override protected void onProgressUpdate ( HttpResponse... response ) {
-		notifyListener(response);
+	@Override protected void onProgressUpdate ( HttpResponse... httpResponse ) {
+		notifyListener(httpResponse);
 	}
 
-	/** Closes the connection and forwards the response to the listener.
+	/** Closes the connections.
 	 * @see HttpResponse
 	 * @see OnHttpResponseListener
 	 * @see android.os.AsyncTask#doInBackground(java.lang.Object[]) */
-	@Override protected void onPostExecute ( HttpResponse response ) {
-		notifyListener(response);
+	@Override protected void onPostExecute ( HttpResponse httpResponse ) {
+		// this HttpResponse will always be null.
+		assert (null==httpResponse);
 	}
 
 	/** Notify the listener of each completion. After passing along the httpResponse,
@@ -117,6 +118,7 @@ public class RepGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
 			}
 		}
 	}
+
 
 	/** The callback for receiving the {@code HttpResponse} from a {@code SimpleGetLoader}
 	 * upon completion of its execute() method.

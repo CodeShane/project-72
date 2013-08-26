@@ -1,15 +1,11 @@
-package com.codeshane.project_72.providers;
+package com.codeshane.representing.providers;
 
-import static com.codeshane.project_72.model.RepresentativesTable.MIME_TABLE_DIR;
-import static com.codeshane.project_72.model.RepresentativesTable.MIME_TABLE_ROW;
-import static com.codeshane.project_72.model.RepresentativesTable.TABLE_NAME;
-import static com.codeshane.util.DbUtils.bindValuesInBulkInsert;
-import static com.codeshane.util.DbUtils.getBulkInsertString;
-import static com.codeshane.util.Utils.addColumnToSelectionArgs;
-import static com.codeshane.util.Utils.whereColumn;
-import static com.codeshane.util.Utils.whereWithId;
+import static com.codeshane.representing.providers.RepresentingContract.*;
+import static com.codeshane.util.Utils.*;
+import static com.codeshane.representing.C.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
@@ -26,120 +22,205 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.util.Log;
+import com.codeshane.representing.C;
+import com.codeshane.representing.Representing;
+import com.codeshane.representing.meta.Table;
+import com.codeshane.representing.providers.RepresentingContract.Columns;
+import com.codeshane.representing.rest.RestIntentService;
+import com.codeshane.util.UriConverter;
+import com.codeshane.util.Utils;
 
-import com.codeshane.project_72.RepApplication;
-import com.codeshane.project_72.meta.ProviderConstants;
-import com.codeshane.project_72.meta.Table;
-import com.codeshane.project_72.model.RepresentativesTable;
-import com.codeshane.project_72.model.RepresentativesTable.Columns;
-import com.codeshane.util.Restful;
-
-//import static com.codeshane.util.Utils.*;
-
-/** ContentProvider for the Representatives table.
+/** This ContentProvider serves the Representatives table.
  *
  * @author  Shane Ian Robinson <shane@codeshane.com>
  * @since   Aug 19, 2013
  * @version 1
  */
-public final class RepsContentProvider extends ContentProvider implements Restful {
+public final class RepsProvider extends ContentProvider {
 
-	public static final String SCHEME = "content://";
-    public static final String AUTHORITY = "com.codeshane.project_72.io.RepresentativesProvider";
-    public static final String DATABASE_NAME = "RepresentativesDb";
-    static {
-        Uri.parse("content://" + AUTHORITY + "/integrityCheck");
-    }
+    Table mTable;
 
-    Table mTable = new RepresentativesTable();//new RepresentativesContent.RepresentativesTable(); //XXX
-    DbHelper bHelper = new DbHelper(this.getContext(), DATABASE_NAME, 1, mTable);
+    RepsDbHelper bHelper;
 
-//	public static final Uri REP_URI = Uri.withAppendedPath(
-//			RepresentativesProvider.AUTHORITY_URI, RepresentativesContent.RepresentativesTable.TABLE_NAME);
+    private static final UriConverter whoIsMyRep = new UriConverter(){
+    	private static final String AUTHORITY_REMOTE = "whoismyrepresentative.com";
+		@Override public Uri asRemote ( Uri uri ) {
+			UriType uriType = RepsProvider.matchUri(uri);
 
-    // Version 1 : Creation of the database
+			Uri.Builder build = new Uri.Builder();
+			build.scheme(C.SCHEME_HTTP);
+			build.authority(AUTHORITY_REMOTE);
+
+//			Log.v(TAG, "builder start="+build.toString());
+
+			List<String> segments = uri.getPathSegments();
+
+			int qtyParams = segments.size();
+			if (qtyParams<2 || qtyParams>3 ) {
+				throw new RuntimeException("Invalid number of segments. There should be 2 or 3, found "+qtyParams+".");
+			}
+
+			String part = segments.get(0).concat(".php");
+			build.appendEncodedPath(part);
+
+			// Now get the name, zip, or state:
+			part = segments.get(1);
+
+			switch (uriType) {
+				case MEMS_BY_ZIP:
+					String zip = segments.get(1);
+					int zl = zip.length();
+					if (zl==5 || zl==9) {
+						build.appendQueryParameter("zip", zip.substring(0, 5));
+					} else if (zl==9) {
+						build.appendQueryParameter("zip", zip.substring(0, 5));
+						build.appendQueryParameter("zip4", zip.substring(5, 9));
+					} else {
+						throw new IllegalArgumentException("ZIP malformed");
+					}
+					break;
+				case REP_BY_NAME:
+				case SEN_BY_NAME:
+					build.appendQueryParameter("name", part);
+					break;
+				case REP_BY_STATE:
+				case SEN_BY_STATE:
+					build.appendQueryParameter("state", part);
+					break;
+				default:
+					break;
+			}
+			build.appendQueryParameter("output", "json");
+			return build.build();
+		}
+
+		@Override public Uri asLocal ( Uri uri ) {
+			return null;
+		}
+    };
+
+	/** @see android.content.ContentProvider#onCreate() */
+	@Override public boolean onCreate () {
+		mTable = new RepresentingContract();
+		bHelper = new RepsDbHelper(this.getContext(), DATABASE_NAME, 1, mTable);
+		return true;
+	}
+
     public static final int DATABASE_VERSION = 1;
 
-    /** For resolving URI lookups by table (optionally by ID)*/
-    private static final UriMatcher sUriMatcher;
-    static {
-    	sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-    	// com.example.authority.Provider/table/
-    	sUriMatcher.addURI(ProviderConstants.CONTENT_SCHEME+AUTHORITY, RepresentativesTable.TABLE_NAME, 0);
-    	// com.example.authority.Provider/table/123
-    	sUriMatcher.addURI(AUTHORITY, RepresentativesTable.TABLE_NAME+"/#", 0);
-    }
-
-    private static enum UriType {
-    	// com.example.authority.Provider/table/
-        ALL(AUTHORITY, TABLE_NAME, MIME_TABLE_DIR),
+    public static enum UriType {
+//        ALL(AUTHORITY, "/", "members", MIME_CURSOR_DIR, "ALL"),
         // com.example.authority.Provider/table/123
-        REP_BY_ID(AUTHORITY, TABLE_NAME + "/#", MIME_TABLE_ROW),
-        MEMS_BY_ZIP(AUTHORITY, TABLE_NAME+"/getall_mems_byzip/#", MIME_TABLE_DIR),
-        MEMS_BY_ZIP4(AUTHORITY, TABLE_NAME+"/getall_mems_byzip/#", MIME_TABLE_DIR),
-        REP_BY_NAME(AUTHORITY, TABLE_NAME+"/getall_reps_byname/*", MIME_TABLE_DIR),
-        REP_BY_STATE(AUTHORITY, TABLE_NAME+"/getall_reps_bystate/*", MIME_TABLE_DIR),
-        SEN_BY_NAME(AUTHORITY, TABLE_NAME+"/getall_sens_byname/*", MIME_TABLE_DIR),
-        SEN_BY_STATE(AUTHORITY, TABLE_NAME+"/getall_sens_bystate/*", MIME_TABLE_DIR)
+        REPS(AUTHORITY, "/", "", MIME_CURSOR_DIR, "REPS"),
+        REPS_BY_ID(AUTHORITY, "/#", "", MIME_CURSOR_ROW, "REP_BY_ID"),
+        MEMS_BY_ZIP(AUTHORITY,"/getall_mems/#", "getall_mems", MIME_CURSOR_DIR, "MEMS_BY_ZIP"),
+//        MEMS_BY_ZIP4(AUTHORITY,"/getall_mems/#", "getall_mems", MIME_TABLE_DIR, "MEMS_BY_ZIP4"),
+        REP_BY_NAME(AUTHORITY,"/getall_reps_byname/*", "getall_reps_byname", MIME_CURSOR_DIR, "REP_BY_NAME"),
+        REP_BY_STATE(AUTHORITY,"/getall_reps_bystate/*", "getall_reps_bystate", MIME_CURSOR_DIR, "REP_BY_STATE"),
+        SEN_BY_NAME(AUTHORITY,"/getall_sens_byname/*", "getall_sens_byname", MIME_CURSOR_DIR, "SEN_BY_NAME"),
+        SEN_BY_STATE(AUTHORITY,"/getall_sens_bystate/*", "getall_sens_bystate", MIME_CURSOR_DIR, "SEN_BY_STATE")
         ;
 
-        private String mTableName; //XXX????
+        private String mAuthority;
+        private String mPath;
         private String mType;
 
-        UriType(String matchPath, String tableName, String type) {
-            mTableName = tableName; // path
+        UriType(String authority, String matchPath, String pathPart, String type, String handle) {
+        	mPath = matchPath; // path
+        	if (MIME_CURSOR_DIR==type) {
+        		type = Utils.getMimeDir(AUTHORITY, type);
+        	} else {
+        		type = Utils.getMimeRow(AUTHORITY, type);
+        	}
             mType = type;           // type
             // enum.ordinal()			// identifier
-            sUriMatcher.addURI(AUTHORITY, matchPath, ordinal());
+            mAuthority = authority;
         }
 
+        /** @since Aug 26, 2013
+		 * @version Aug 26, 2013
+		 * @return String
+		 */
+		public String getMatchPath () {
+			return null;
+
+		}
+		String getAuthority() {
+        	return mAuthority;
+        }
         String getTableName() {
-            return mTableName;
+            return "representatives";
         }
 
         String getType() {
             return mType;
         }
+
+//        String getPathPart() {
+//            return mPath;
+//        }
+
     }
+
+    /** For resolving URI lookups by table (optionally by ID)*/
+    public static final UriMatcher sUriMatcher;
     static {
-        // Ensures UriType is initialized
-        UriType.values();
+    	sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+    	for (UriType u: UriType.values()){
+        	sUriMatcher.addURI(u.getAuthority(), u.getMatchPath(), u.ordinal());
+        }
     }
 
-    private static UriType matchUri(Uri uri) {
+    /** Classify a URI into a UriType, which determines how it is handled. */
+    public static final UriType matchUri(Uri uri) {
+    	Log.i(TAG,"114 matchUri");
         int match = sUriMatcher.match(uri);
-
-        Log.i("XXX 113 ("+match+") uri := ",uri.toString());
         if (match < 0) {
-            throw new IllegalArgumentException("Unknown URI " + uri);
+            throw new IllegalArgumentException("Unknown URI " + uri.toString());
+            //XXX For production:
+//            return UriType.REPS;
         }
         return UriType.class.getEnumConstants()[match];
     }
 
-    private SQLiteDatabase mDatabase;
+    /** SqliteDbOpenHelper. Retrieve SQLiteDatabase the via getDatabase() */
+    private static RepsDbHelper dbHelper=null;
 
-    private static DbHelper dbHelper=null;
 
     SQLiteDatabase getDatabase() {
     	return dbHelper.getDatabase(getContext());
     }
 
+    /** Request the REST client update the database for the given query URI.
+     * */
+    private void requestRestUpdate(Uri uri){
+        SharedPreferences prefs = Representing.prefs();
+
+        Uri remoteUri = whoIsMyRep.asRemote(uri);
+
+        //TODO Separate this to enable forcing
+        if (prefs.getLong("lastUpdate", 0)+3600000<System.currentTimeMillis()){
+        	Context context = Representing.context();
+        	Intent requestLatest = new Intent(Intent.ACTION_DEFAULT)
+        	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri) // Include the parcelable Uri
+        	.putExtra(RestIntentService.EXTRA_URI_REMOTE, remoteUri) // Include the parcelable Uri
+        	.setClass(context, RestIntentService.class);
+        	context.sendBroadcast(requestLatest);
+        }
+    }
+
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-
         UriType uriType = matchUri(uri);
-        Context context = getContext();
-
-        // Pick the correct database for this operation
         SQLiteDatabase db = getDatabase();
         String id;
 
         int result = -1;
 
         switch (uriType) {
-            case REP_BY_ID:
+            case REP_BY_NAME:
                 id = uri.getPathSegments().get(1);
-                result = db.delete(uriType.getTableName(), whereWithId(selection),
+                result = db.delete(uriType.getTableName(), "name = ?",
                         addColumnToSelectionArgs(id, selectionArgs));
                 break;
 			default:
@@ -156,26 +237,19 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
     @Override public Uri insert(Uri uri, ContentValues values) {
         UriType uriType = matchUri(uri);
         Context context = getContext();
-
-        // Pick the correct database for this operation
         SQLiteDatabase db = getDatabase();
         long id;
 
         Uri resultUri;
 
         switch (uriType) {
-            case REP_BY_ID:
+            case REP_BY_NAME:
             	id = db.insert(uriType.getTableName(), null, values);
                 resultUri = (id == -1) ? null : ContentUris.withAppendedId(uri, id);
                 break;
-            case ALL:
-                id = db.insert(uriType.getTableName(), null, values);
-                resultUri = (id == -1) ? null : ContentUris.withAppendedId(uri, id);
-                break;
             default:
-            	Log.i("XXX 193",uri.toString());
-            	resultUri=null;
-                //XXX throw new IllegalArgumentException("Unknown URI " + uri);
+            	Log.i(TAG, "176 "+uri.toString());
+            	return null;
         }
 
         // Notify with base uri (not the unwatched new uri)
@@ -183,8 +257,7 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
         return resultUri;
     }
 
-    @Override
-    public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
+    @Override public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
             throws OperationApplicationException {
         SQLiteDatabase db = getDatabase();
         db.beginTransaction();
@@ -202,8 +275,7 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
         }
     }
 
-    @Override
-    public int bulkInsert(Uri uri, ContentValues[] values) {
+    @Override public int bulkInsert(Uri uri, ContentValues[] values) {
 
         UriType uriType = matchUri(uri);
         Context context = getContext();
@@ -217,7 +289,7 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
         db.beginTransaction();
         try {
             switch (uriType) {
-                case ALL:
+                case REPS:
                     insertStmt = db.compileStatement(getBulkInsertString(mTable));
                     for (ContentValues value : values) {
                         bindValuesInBulkInsert(mTable, insertStmt, value);
@@ -242,38 +314,13 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
         return numberInserted;
     }
 
-    private static final Class<? extends Restful> restfulServiceClass = WhoIsMyRepRestClient.class;
-
-    /** Request the REST client update the database for the given query URI.
-     * */
-    public void requestRestUpdate(Uri uri){
-        Context context = getContext();
-
-        SharedPreferences prefs = RepApplication.prefs();
-
-        if (prefs.getLong("lastUpdate", 0)+3600000<System.currentTimeMillis()){
-        	Intent requestLatest = new Intent(Intent.ACTION_DEFAULT)
-        	.putExtra(Intent.EXTRA_STREAM, uri) // Include the parcelable Uri
-        	.setClass(context, restfulServiceClass);
-        	context.sendBroadcast(requestLatest);
-        }
-    }
-
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
-        Cursor c = null;
         UriType uriType = matchUri(uri);
-        SQLiteDatabase db = getDatabase();
 
 //		Normalize the request parameters by type
         switch (uriType) {
-			case REP_BY_ID:
-				//XXX uri.withAppendedId?
-				selection = whereWithId(selection);
-				break;
-			case MEMS_BY_ZIP4:
-				//XXX
 			case MEMS_BY_ZIP:
 				selection = whereColumn(Columns.ZIP);
 				break;
@@ -285,9 +332,17 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
 			case SEN_BY_STATE:
 				selection = whereColumn(Columns.STATE);
 				break;
-			case ALL:
+			case REPS:
 			default:
         }
+
+
+        /* This innocuous little line kicks off the REST download process, while enabling the provider to load and return from the database. */
+    	requestRestUpdate(uri);
+
+
+        Cursor c = null;
+        SQLiteDatabase db = getDatabase();
 
 //      Perform the database query
 //        c = managedQuery(uriType.getTableName(), projection, selection, selectionArgs, null, null, sortOrder);
@@ -299,6 +354,7 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
             c.setNotificationUri(getContext().getContentResolver(), uri);
         }
         return c;
+
     }
 
     @Override public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
@@ -306,7 +362,7 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
         SQLiteDatabase db = getDatabase();
         int result = -1;
         switch (uriType) {
-            case REP_BY_ID:
+            case REP_BY_NAME:
                 String id = uri.getPathSegments().get(1);
                 result = db.update(uriType.getTableName(), values, whereWithId(selection),
                     addColumnToSelectionArgs(id, selectionArgs));
@@ -318,14 +374,6 @@ public final class RepsContentProvider extends ContentProvider implements Restfu
         return result;
     }
 
-    @Override
-    public boolean create() {
-        return true;
-    }
-
-	/** @see android.content.ContentProvider#onCreate() */
-	@Override public boolean onCreate () {
-		return false;
-	}
 
 }
+

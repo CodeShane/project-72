@@ -3,8 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.codeshane</groupId>
-	<artifactId>project-72</artifactId>
-	<version>0.0.3-SNAPSHOT</version>
+	<artifactId>representing</artifactId>
+	<version>0.0.5-SNAPSHOT</version>
 	<name>My Reps</name>
 	<packaging>pom</packaging>
 

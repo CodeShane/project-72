@@ -2,78 +2,129 @@
  * Copyright © 2013 Shane Ian Robinson. All Rights Reserved.
  * See LICENSE file or visit codeshane.com for more information. */
 
-package com.codeshane.project_72.providers;
+package com.codeshane.representing.rest;
 
-import java.util.HashMap;
-import java.util.Map;
-import android.annotation.TargetApi;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.util.EntityUtils;
+
 import android.app.IntentService;
+import android.content.ContentProvider;
+import android.content.ContentProviderOperation;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.OperationApplicationException;
 import android.content.res.Configuration;
-import android.database.Cursor;
 import android.net.Uri;
-import android.os.Build;
-import com.codeshane.util.Restful;
+import android.os.Bundle;
+import android.os.Parcelable;
+import android.os.RemoteException;
+import android.util.Log;
+import android.widget.Toast;
 
-/** @author  Shane Ian Robinson <shane@codeshane.com>
+import com.codeshane.representing.Representing;
+import com.codeshane.representing.providers.RepresentingContract;
+import com.codeshane.representing.rest.HttpGetTask.OnHttpResponseListener;
+
+/** This service accepts standard ContentProvider requests,
+ * converts them for the associated rest resource, requests the resource,
+ * and updates the other ContentProvider blah blah
+ * <pre>
+Intent msgIntent = new Intent(this, SimpleIntentService.class);
+msgIntent.putExtra(RestIntentService.ACTION_QUERY, strInputMsg);
+startService(msgIntent);
+</pre>
+ * @author  Shane Ian Robinson <shane@codeshane.com>
  * @since   Aug 22, 2013
  * @version 1
  */
-public class WhoIsMyRepRestClient extends IntentService implements Restful {
+public class RestIntentService extends IntentService implements OnHttpResponseListener {
+	public static final String TAG = RestIntentService.class.getName();
 
-	public static final String	TAG	= "WhoIsMyRepresentativeClient";
-	public static final String DOMAIN = "whoismyrepresentative.com";
-	public static final Uri SOURCE = Uri.parse("http://whoismyrepresentative.com/");
+	public static final String ACTION_QUERY = "com.codeshane.net.ACTION_QUERY";
+	public static final String ACTION_QUERY_RESPONSE = "com.codeshane.net.ACTION_QUERY_RESPONSE";
 
-	/** @see WhoIsMyRepRestClient */
-	public WhoIsMyRepRestClient ( String name ) {
+	/** Identifier for an extra containing a parceled {@code Uri} {@code ContentProvider} Uri for the service to download.
+	 * @see ContentProvider
+	 * @see Uri */
+	public static final String EXTRA_URI_LOCAL = "com.codeshane.net.EXTRA_URI_LOCAL";
+
+	/** Identifier for an extra containing a parceled {@code Uri} {@code ContentProvider} Uri for the service to download.
+	 * @see ContentProvider
+	 * @see Uri */
+	public static final String EXTRA_URI_REMOTE = "com.codeshane.net.EXTRA_URI_REMOTE";
+
+	/** An identifier for an optional extra representing this query.This identifier is not used, simply returned to the sender. */
+	public static final String EXTRA_QUERY_ID = "com.codeshane.net.EXTRA_QUERY_ID";
+
+	/** An identifier for an extra holding the package of the component that will process the returned entity. */
+	public static final String EXTRA_PACKAGE = "com.codeshane.net.EXTRA_PACKAGE";
+
+	/** An identifier for an extra holding the name of the component that will process the returned entity. */
+	public static final String EXTRA_COMPONENT = "com.codeshane.net.EXTRA_COMPONENT";
+
+	/** @see RestIntentService */
+	public RestIntentService ( String name ) {
 		super(name);
-		// TODO stub
+		this.setIntentRedelivery(true);
 	}
 
-	/** @see android.app.IntentService#setIntentRedelivery(boolean) */
-	@Override public void setIntentRedelivery ( boolean enabled ) {
-		super.setIntentRedelivery(enabled);
-
-	}
-
-	/** @see android.app.IntentService#onStart(android.content.Intent, int) */
-	@Override public void onStart ( Intent intent, int startId ) {
-		super.onStart(intent, startId);
-
-	}
-
-	/** @see android.app.IntentService#onStartCommand(android.content.Intent, int, int) */
-	@Override public int onStartCommand ( Intent intent, int flags, int startId ) {
-		return super.onStartCommand(intent, flags, startId);
-
-	}
-
-	/** @see android.app.IntentService#onDestroy() */
-	@Override public void onDestroy () {
-		super.onDestroy();
-
+	interface IntentHandler {
+		void handleIntent(Intent intent);
 	}
 
 	/** Worker thread.
 	 * @see android.app.IntentService#onHandleIntent(android.content.Intent) */
 	@Override protected void onHandleIntent ( Intent intent ) {
+		String action = intent.getAction();
+		if (null==action) return;
+		Bundle extras = intent.getExtras();
+		if (null==extras) {
+			return;
+		}
 
-	}
+		if (ACTION_QUERY.equalsIgnoreCase(action)) {
+			Parcelable parcelable = extras.getParcelable(EXTRA_URI_REMOTE);
+			Uri remoteUri = null;
+			if (null!=parcelable){
+				if (parcelable instanceof Uri){
+					remoteUri = (Uri) parcelable;
+					Toast.makeText(getApplicationContext(), "URI ".concat(remoteUri.toString()), Toast.LENGTH_LONG).show();
+					new HttpGetTask(this).execute(remoteUri);
+				}
+			}
+		} else if (ACTION_QUERY_RESPONSE.equalsIgnoreCase(action)){
+			Parcelable parcelable = extras.getParcelable(EXTRA_URI_LOCAL);
+			Uri localUri = null;
 
-	private static final Map<String,String> URI_REWRITE_MAP;
-	static {
-		URI_REWRITE_MAP = new HashMap<String,String>();
-//		URI_REWRITE_MAP.put(key, value)
-		//XXX
-	}
+			ArrayList<ContentProviderOperation> operations = new ArrayList<ContentProviderOperation>();
 
-	private static Uri rewriteUri(String string){
-		Uri uri = Uri.parse(string);
-		uri.buildUpon().scheme("http").build();
-		//XXX
-		return uri;
+			if (null!=parcelable){
+				if (parcelable instanceof Uri){
+					localUri = (Uri) parcelable;
+					String jsonResponse = extras.getString(Intent.EXTRA_STREAM);
+					ArrayList<ContentValues> items = WhoIsMyRepresentativeJsonParser.parseJsonResult(jsonResponse);
+					for (Iterator<ContentValues> it = items.iterator(); it.hasNext();) {
+						ContentValues item = (ContentValues) it.next();
+						operations.add(ContentProviderOperation.newInsert(localUri).withValues(item).build());
+					}
+
+
+				}
+			}
+			if (operations.size() > 0) {
+				try {
+					this.getContentResolver().applyBatch(RepresentingContract.AUTHORITY, operations);
+				} catch (RemoteException ex) {
+					ex.printStackTrace();
+				} catch (OperationApplicationException ex) {
+					ex.printStackTrace();
+				}
+			}
+		}
 	}
 
 	/** @see android.app.Service#onConfigurationChanged(android.content.res.Configuration) */
@@ -81,40 +132,30 @@ public class WhoIsMyRepRestClient extends IntentService implements Restful {
 		super.onConfigurationChanged(newConfig);
 	}
 
-	/** @see android.app.Service#onTaskRemoved(android.content.Intent) */
-	@TargetApi ( Build.VERSION_CODES.ICE_CREAM_SANDWICH )
-	@Override public void onTaskRemoved ( Intent rootIntent ) {
-		super.onTaskRemoved(rootIntent);
-	}
+	/** Parse the returned data from whatever query the GET task performed.
+	 * @see com.codeshane.representing.rest.HttpGetTask.OnHttpResponseListener#onHttpResponse(org.apache.http.HttpResponse) */
+	@Override public void onHttpResponse ( HttpResponse httpResponse ) {
+		HttpEntity httpEntity=null;
+		String httpEntityText=null;
+		String uris = httpResponse.getFirstHeader(RestIntentService.EXTRA_URI_LOCAL).getValue();
 
-	/** @see com.codeshane.util.Restful#create() */
-	@Override public boolean create () {
-		return false;
-	}
-	/** @see com.codeshane.util.Restful#query(android.net.Uri, java.lang.String[], java.lang.String, java.lang.String[], java.lang.String) */
-	@Override public Cursor query ( Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder ) {
-		return null;
-	}
+		try {
+	        httpEntity = httpResponse.getEntity();
+        	if (null == httpEntity) { Log.e(TAG,"null httpEntity"); return; }
+			httpEntityText = EntityUtils.toString(httpEntity);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 
-	/** @see com.codeshane.util.Restful#getType(android.net.Uri) */
-	@Override public String getType ( Uri uri ) {
-		return null;
+		if (null == httpEntityText) { Log.e(TAG,"null httpEntityText"); return; } // TODO notify requestor of error
+
+		// Send the data via an intent back to itself so that it can be processed in the worker thread.
+		Intent intent = new Intent();
+		intent.setClass(Representing.context(), RestIntentService.class);
+		intent.setAction(ACTION_QUERY_RESPONSE);
+		Uri uri = Uri.parse(uris);
+		intent.putExtra( EXTRA_URI_LOCAL, uri);
+		intent.putExtra(Intent.EXTRA_STREAM, httpEntityText);
+		startService(intent);
 	}
-
-	/** @see com.codeshane.util.Restful#insert(android.net.Uri, android.content.ContentValues) */
-	@Override public Uri insert ( Uri uri, ContentValues values ) {
-		return null;
-	}
-
-	/** @see com.codeshane.util.Restful#delete(android.net.Uri, java.lang.String, java.lang.String[]) */
-	@Override public int delete ( Uri uri, String selection, String[] selectionArgs ) {
-		return 0;
-	}
-
-	/** @see com.codeshane.util.Restful#update(android.net.Uri, android.content.ContentValues, java.lang.String, java.lang.String[]) */
-	@Override public int update ( Uri uri, ContentValues values, String selection, String[] selectionArgs ) {
-		return 0;
-	}
-
-
 }
