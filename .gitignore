@@ -18,4 +18,4 @@ local.properties
 # Eclipse project files
 .classpath
 .project
-/target
+src_dep/
