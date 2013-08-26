@@ -20,8 +20,4 @@ codesign.properties
 # Eclipse project files
 .classpath
 .project
-<<<<<<< HEAD
 /target
-=======
-src_dep/
->>>>>>> wip/rest
