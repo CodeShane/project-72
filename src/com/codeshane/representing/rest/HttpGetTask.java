@@ -4,8 +4,6 @@
 
 package com.codeshane.representing.rest;
 
-import java.io.IOException;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -35,6 +33,8 @@ public class HttpGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
 	protected HttpClient httpClient = null;
 
     protected HttpUriRequest httpUriRequest = null;
+
+	private Uri	localUri;
 
 	/** @see OnHttpResponseListener */
 	public HttpGetTask(OnHttpResponseListener onHttpResponseListener) {
@@ -70,7 +70,7 @@ public class HttpGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
 			try {
 				httpResponse = httpClient.execute(httpUriRequest);
 				if (null!=httpResponse) {
-					httpResponse.addHeader(RestIntentService.EXTRA_URI_LOCAL,uris);
+					httpResponse.addHeader(RestIntentService.EXTRA_URI_LOCAL,this.localUri.toString());
 					publishProgress(httpResponse);
 				}
 			} catch (Exception e) {
@@ -109,12 +109,10 @@ public class HttpGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
 		if (null==response) {return;}
 		if (null != mListener) {
 			for (HttpResponse httpResponse : response) {
-				mListener.onHttpResponse(httpResponse);
-				try {
-					httpResponse.getEntity().consumeContent();
-				} catch (IOException ex) {
-					ex.printStackTrace();
+				if (null!=localUri) {
+					httpResponse.addHeader(RestIntentService.EXTRA_URI_LOCAL, localUri.toString());
 				}
+				mListener.onHttpResponse(httpResponse);
 			}
 		}
 	}
@@ -126,5 +124,17 @@ public class HttpGetTask extends AsyncTask<Uri, HttpResponse, HttpResponse> {
 	 * */
 	public interface OnHttpResponseListener {
 		void onHttpResponse(HttpResponse response);
+	}
+
+
+	/** @since Aug 28, 2013
+	 * @version Aug 28, 2013
+	 * @return AsyncTask<Uri,HttpResponse,HttpResponse>
+	 */
+	public AsyncTask<Uri, HttpResponse, HttpResponse> setLocalUri ( Uri uri ) {
+		if (null!=uri){
+			this.localUri = uri;
+		}
+		return this;
 	}
 }

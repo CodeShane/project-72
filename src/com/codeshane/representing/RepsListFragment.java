@@ -73,8 +73,8 @@ public class RepsListFragment extends ListFragment implements LoaderCallbacks<Cu
 		super.onActivityCreated(savedInstanceState);
 
 	    // REST call parameters
-	    Bundle restArgs = new Bundle();
-	    restArgs.putString("mode", "get");
+//	    Bundle restArgs = new Bundle();
+//	    restArgs.putString("mode", "get");
 
 		// Loader args for LoaderManager to use to maintain & reload Loaders state.
 //	    Bundle loaderArgs = new Bundle();
@@ -169,7 +169,7 @@ public class RepsListFragment extends ListFragment implements LoaderCallbacks<Cu
         	loaderUri,
         	PROJECTION,
         	" " + Columns.ZIP.getName() + " = ? ",
-        	new String[]{mLastSearchZipCode},
+        	new String[]{ mLastSearchZipCode },
         	Columns.NAME.getName() + " COLLATE LOCALIZED ASC");
 	}
 
@@ -177,7 +177,8 @@ public class RepsListFragment extends ListFragment implements LoaderCallbacks<Cu
 	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
 	@Override public void onLoadFinished ( Loader<Cursor> loader, Cursor cursor ) {
 		try {
-			getListAdapter().swapCursor(cursor);
+			Log.v("RepsListFragment", "onLoadFinished cursor of " + ((null==cursor)?"null":cursor.getCount()) + " rows.");
+			if (cursor!=null) { getListAdapter().swapCursor(cursor); }
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			Log.i("RepListFrag","swallowed exception, exporting cursor info");

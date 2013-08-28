@@ -72,40 +72,6 @@ public interface RepsContract {
 		/** The MIME type of a {@link #CONTENT_URI} a single content item. */
 		public final String getItemMimeType() { return C.MIME_CURSOR_ROW_VND + VENDOR + "." + name(); }
 
-
-//	public static final class Representatives {//implements Table {
-
-//		public static final String	TABLE_NAME = "RepresentativesTable";
-
-//		public static final int VERSION = 3;
-
-//		/** The MIME type of {@link #CONTENT_URI} providing a directory of status messages. */
-//		public static final String CONTENT_TYPE = C.MIME_CURSOR_DIR_VND + VENDOR + "." + TABLE_NAME;
-//
-//		/** The MIME type of a {@link #CONTENT_URI} a single status message. */
-//		public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/vnd." + VENDOR + "." + TABLE_NAME;
-
-//		/** Array of column names. */
-//		public static final String[] PROJECTION = new String[Columns.values().length];
-//		static {
-//			for (Columns c : Columns.values()) {
-//				PROJECTION[c.ordinal()] = c.getName();
-//			}
-//		};
-
-//		/** @see com.codeshane.representing.meta.Table#getName() */
-//		@Override public String getName () { return TABLE_NAME; }
-//
-//		/** @see com.codeshane.representing.meta.Table#getColumns() */
-//		@Override public Column[] getColumns () { return Columns.values(); }
-//
-//		/** @see com.codeshane.representing.meta.Table#onUpgrade(android.database.sqlite.SQLiteDatabase, int, int) */
-//		@Override public boolean onUpgrade ( SQLiteDatabase db, int oldversion, int newversion ) { return false; }
-//
-//		/** @see com.codeshane.representing.meta.Table#onCreation(android.database.sqlite.SQLiteDatabase)
-//		 * @see BaseColumns */
-//		@Override public boolean onCreation ( SQLiteDatabase db ) { return false; }
-
 		public static enum Columns implements Column {
 
 			_id("INTEGER", false), UPDATED("INTEGER", false), NAME("TEXT", true), PARTY("TEXT", false), STATE("TEXT", true),
@@ -114,10 +80,6 @@ public interface RepsContract {
 			private final String	mType;
 			private final boolean	mIsIndexed;
 
-			/** Private constructor for static enum initialization.
-			 * @param type The Sqlite type affinity
-			 * @param isIndexed True if the column should be indexed.
-			 * */
 			private Columns ( String type, boolean isIndexed ) {
 				mType = type;
 				mIsIndexed = isIndexed;
@@ -141,17 +103,6 @@ public interface RepsContract {
 				}
 			};
 		} // end Columns
-
-
-		/** @since Aug 28, 2013
-		 * @version Aug 28, 2013
-		 * @return String[]
-		 */
-		public String[] projection () {
-			return null;
-
-		}
-
 	} // end 'representatives' table
 
 }

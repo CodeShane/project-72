@@ -24,6 +24,7 @@ import android.content.SharedPreferences;
 import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.util.Log;
@@ -31,7 +32,9 @@ import android.util.Log;
 import com.codeshane.representing.C;
 import com.codeshane.representing.Representing;
 import com.codeshane.representing.meta.Table;
+
 import static com.codeshane.representing.providers.RepsContract.Tables.Columns;
+
 import com.codeshane.representing.rest.RestIntentService;
 import com.codeshane.util.UriConverter;
 
@@ -139,7 +142,6 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
         UriType(String authority, String matchPath, String pathPart, String type, Table table) {
         	// enum.ordinal()			// identifier - do *not* persist, as adding/reordering static declarations will change it. use name() if necessary.
-	    	Log.i(TAG,"new UriType()");
         	mAuthority = authority;
         	mMatchPath = matchPath;
         	mPathPart = pathPart;
@@ -190,13 +192,14 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
     /** Force the REST client to update the database for the given query URI.
      * @see RepsProvider#startRestUpdate(Uri) */
     private void startRestUpdate(Uri uri) {
-    	Log.v(TAG,"startRestUpdate - taking flight");
-    	Context context = Representing.context();
-    	Intent requestLatest = new Intent(Intent.ACTION_DEFAULT)
-    	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri) // Include the Uri parcel
-    	.putExtra(RestIntentService.EXTRA_URI_REMOTE, whoIsMyRep.asRemote(uri)) // Include the Uri parcel
-    	.setClass(context, RestIntentService.class);
-    	context.sendBroadcast(requestLatest);
+    	Log.v(TAG,"startRestUpdate..");
+    	Context context = this.getContext().getApplicationContext();
+    	Intent requestLatest = new Intent(RestIntentService.ACTION_QUERY)
+    	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri.toString())
+    	.putExtra(RestIntentService.EXTRA_URI_REMOTE, whoIsMyRep.asRemote(uri).toString())
+    	.setClass(this.getContext().getApplicationContext(), RestIntentService.class);
+    	Log.v(TAG,".. taking flight");
+    	context.startService(requestLatest);
     }
 
     @Override
@@ -236,7 +239,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
                 resultUri = (id == -1) ? null : ContentUris.withAppendedId(uri, id);
                 break;
             default:
-            	Log.i(TAG, "176 "+uri.toString());
+            	Log.i(TAG, "insert unhandled uriType "+uri.toString());
             	return null;
         }
 
@@ -328,7 +331,14 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
         /* Perform the database query */
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor c = db.query(uriType.getTable().name(), projection, selection, selectionArgs, null, null, sortOrder);
+        Cursor c = null;
+        try {
+        	c = db.query(uriType.getTable().name(), projection, selection, selectionArgs, null, null, sortOrder);
+        } catch (SQLiteException ex){
+        	Log.e(TAG,"Query error.");
+        	ex.printStackTrace();
+        }
+
 
         if ((c != null) && !isTemporary()) {
         	// Register the cursor to watch the uri for changes
