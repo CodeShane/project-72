@@ -13,7 +13,7 @@ import org.json.JSONObject;
 import android.content.ContentValues;
 import android.util.Log;
 
-import com.codeshane.representing.providers.RepresentativeItem;
+import com.codeshane.representing.providers.Rep;
 
 /** Utility class to enable consumption of the DSL REST API resources at http://whoismyrepresentative.com/api.
  * @author  Shane Ian Robinson <shane@codeshane.com>
@@ -27,7 +27,7 @@ public class WhoIsMyRepresentativeJsonParser {
 	 * @param jsonResponse A json-formatted string from the indicated API.
 	 * @return repItems ArrayList of RepItem */
 	public static final ArrayList<ContentValues> parseJsonResult (String jsonResult){
-		ArrayList<RepresentativeItem> repItems = new ArrayList<RepresentativeItem>();
+		ArrayList<Rep> repItems = new ArrayList<Rep>();
 		ArrayList<ContentValues> contentValues = new ArrayList<ContentValues>();
 
 		try {
@@ -44,7 +44,7 @@ public class WhoIsMyRepresentativeJsonParser {
 					}
 				}
 
-				RepresentativeItem ri = RepresentativeItem.update(null,item);
+				Rep ri = Rep.update(null,item);
 				if (null!=ri){
 					Log.i(TAG,"RepItem!!>>>"+ri.toJson()+">>>"+ri.toString());
 					repItems.add(ri);

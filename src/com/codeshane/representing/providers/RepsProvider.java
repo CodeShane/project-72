@@ -1,8 +1,15 @@
 package com.codeshane.representing.providers;
 
-import static com.codeshane.representing.providers.RepresentingContract.*;
-import static com.codeshane.util.Utils.*;
-import static com.codeshane.representing.C.*;
+import static android.content.ContentResolver.CURSOR_DIR_BASE_TYPE;
+import static android.content.ContentResolver.CURSOR_ITEM_BASE_TYPE;
+import static com.codeshane.representing.providers.RepsContract.AUTHORITY;
+import static com.codeshane.representing.providers.RepsContract.DATABASE_NAME;
+import static com.codeshane.representing.providers.RepsContract.Representatives.TABLE_NAME;
+import static com.codeshane.util.DbUtils.addColumnToSelectionArgs;
+import static com.codeshane.util.DbUtils.whereColumn;
+import static com.codeshane.util.DbUtils.whereWithId;
+import static com.codeshane.util.Tables.bindValuesInBulkInsert;
+import static com.codeshane.util.Tables.bulkInsertStatement;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +17,7 @@ import java.util.List;
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
+import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -22,36 +30,46 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.util.Log;
+
 import com.codeshane.representing.C;
 import com.codeshane.representing.Representing;
 import com.codeshane.representing.meta.Table;
-import com.codeshane.representing.providers.RepresentingContract.Columns;
+import com.codeshane.representing.providers.RepsContract.Representatives.Columns;
 import com.codeshane.representing.rest.RestIntentService;
 import com.codeshane.util.UriConverter;
-import com.codeshane.util.Utils;
-
 /** This ContentProvider serves the Representatives table.
  *
  * @author  Shane Ian Robinson <shane@codeshane.com>
  * @since   Aug 19, 2013
  * @version 1
  */
-public final class RepsProvider extends ContentProvider {
+public final class RepsProvider extends ContentProvider implements RepsContract {
 
-    Table mTable;
+	public static final String TAG = RepsProvider.class.getName();
 
-    RepsDbHelper bHelper;
+//	private Table mTable;
+    private RepsDatabaseHelper dbHelper;
+    /** SqliteDbOpenHelper. Retrieve SQLiteDatabase the via getDatabase() */
+
+//    SQLiteDatabase getDatabase() {
+//    	Log.i(TAG,"getDatabase()");
+//    	if (null==dbHelper){
+//    		Log.e(TAG,"dbHelper was null!");
+//    		dbHelper = new RepsDatabaseHelper(this.getContext());
+//    	}
+//    	return dbHelper.getDatabase(getContext());
+//    }
 
     private static final UriConverter whoIsMyRep = new UriConverter(){
     	private static final String AUTHORITY_REMOTE = "whoismyrepresentative.com";
 		@Override public Uri asRemote ( Uri uri ) {
+
+	    	Log.i(TAG,"asRemote()");
 			UriType uriType = RepsProvider.matchUri(uri);
 
 			Uri.Builder build = new Uri.Builder();
 			build.scheme(C.SCHEME_HTTP);
 			build.authority(AUTHORITY_REMOTE);
-
-//			Log.v(TAG, "builder start="+build.toString());
 
 			List<String> segments = uri.getPathSegments();
 
@@ -101,8 +119,8 @@ public final class RepsProvider extends ContentProvider {
 
 	/** @see android.content.ContentProvider#onCreate() */
 	@Override public boolean onCreate () {
-		mTable = new RepresentingContract();
-		bHelper = new RepsDbHelper(this.getContext(), DATABASE_NAME, 1, mTable);
+		Log.d(TAG,"onCreate()");
+		dbHelper = new RepsDatabaseHelper(this.getContext());
 		return true;
 	}
 
@@ -111,90 +129,74 @@ public final class RepsProvider extends ContentProvider {
     public static enum UriType {
 //        ALL(AUTHORITY, "/", "members", MIME_CURSOR_DIR, "ALL"),
         // com.example.authority.Provider/table/123
-        REPS(AUTHORITY, "/", "", MIME_CURSOR_DIR, "REPS"),
-        REPS_BY_ID(AUTHORITY, "/#", "", MIME_CURSOR_ROW, "REP_BY_ID"),
-        MEMS_BY_ZIP(AUTHORITY,"/getall_mems/#", "getall_mems", MIME_CURSOR_DIR, "MEMS_BY_ZIP"),
-//        MEMS_BY_ZIP4(AUTHORITY,"/getall_mems/#", "getall_mems", MIME_TABLE_DIR, "MEMS_BY_ZIP4"),
-        REP_BY_NAME(AUTHORITY,"/getall_reps_byname/*", "getall_reps_byname", MIME_CURSOR_DIR, "REP_BY_NAME"),
-        REP_BY_STATE(AUTHORITY,"/getall_reps_bystate/*", "getall_reps_bystate", MIME_CURSOR_DIR, "REP_BY_STATE"),
-        SEN_BY_NAME(AUTHORITY,"/getall_sens_byname/*", "getall_sens_byname", MIME_CURSOR_DIR, "SEN_BY_NAME"),
-        SEN_BY_STATE(AUTHORITY,"/getall_sens_bystate/*", "getall_sens_bystate", MIME_CURSOR_DIR, "SEN_BY_STATE")
-        ;
+    	A("a", "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, TABLE_NAME),
+        REPS(AUTHORITY.toString(), "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, TABLE_NAME),
+        REPS_BY_ID(AUTHORITY.toString(), "/#", "", CURSOR_ITEM_BASE_TYPE, "REP_BY_ID"),
+        MEMS_BY_ZIP(AUTHORITY.toString(),"getall_mems/#", "getall_mems", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
+        REP_BY_NAME(AUTHORITY,"getall_reps_byname/*", "getall_reps_byname", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
+        REP_BY_STATE(AUTHORITY,"getall_reps_bystate/*", "getall_reps_bystate", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
+        SEN_BY_NAME(AUTHORITY,"getall_sens_byname/*", "getall_sens_byname", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
+        SEN_BY_STATE(AUTHORITY,"getall_sens_bystate/*", "getall_sens_bystate", CURSOR_DIR_BASE_TYPE, TABLE_NAME);
 
         private String mAuthority;
-        private String mPath;
+        private String mMatchPath;
+        private String mPathPart;
         private String mType;
+        private String mTable;
 
-        UriType(String authority, String matchPath, String pathPart, String type, String handle) {
-        	mPath = matchPath; // path
-        	if (MIME_CURSOR_DIR==type) {
-        		type = Utils.getMimeDir(AUTHORITY, type);
-        	} else {
-        		type = Utils.getMimeRow(AUTHORITY, type);
-        	}
-            mType = type;           // type
-            // enum.ordinal()			// identifier
-            mAuthority = authority;
+        UriType(String authority, String matchPath, String pathPart, String type, String table) {
+        	// enum.ordinal()			// identifier
+	    	Log.i(TAG,"new UriType()");
+        	mAuthority = authority;
+        	mMatchPath = matchPath;
+        	mPathPart = pathPart;
+            mType = type+C.VND+table;
+            mTable = table;
         }
-
-        /** @since Aug 26, 2013
-		 * @version Aug 26, 2013
-		 * @return String
+		public String getAuthority() { return mAuthority; }
+		public String getMatchPath () { return mMatchPath; }
+		public String getPathPart() { return mPathPart; }
+		public String getType() { return mType; }
+		public String getTableName() { return mTable; }
+		/** @since Aug 28, 2013
+		 * @version Aug 28, 2013
+		 * @return Table
 		 */
-		public String getMatchPath () {
+		public Table getTable () {
 			return null;
 
 		}
-		String getAuthority() {
-        	return mAuthority;
-        }
-        String getTableName() {
-            return "representatives";
-        }
+	}
 
-        String getType() {
-            return mType;
-        }
-
-//        String getPathPart() {
-//            return mPath;
-//        }
-
-    }
 
     /** For resolving URI lookups by table (optionally by ID)*/
     public static final UriMatcher sUriMatcher;
     static {
-    	sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+    	UriMatcher t = new UriMatcher(UriMatcher.NO_MATCH);
     	for (UriType u: UriType.values()){
-        	sUriMatcher.addURI(u.getAuthority(), u.getMatchPath(), u.ordinal());
+        	t.addURI(u.getAuthority(), u.getMatchPath(), u.ordinal());
         }
+    	sUriMatcher = t;
     }
 
     /** Classify a URI into a UriType, which determines how it is handled. */
     public static final UriType matchUri(Uri uri) {
-    	Log.i(TAG,"114 matchUri");
+    	Log.i(TAG,"birthing a dragon");
         int match = sUriMatcher.match(uri);
         if (match < 0) {
-            throw new IllegalArgumentException("Unknown URI " + uri.toString());
+//            throw new IllegalArgumentException("Unknown URI " + uri.toString());
             //XXX For production:
-//            return UriType.REPS;
+        	Log.e(TAG, "Unknown URI "+uri.toString());
+            return UriType.REPS;
         }
         return UriType.class.getEnumConstants()[match];
-    }
-
-    /** SqliteDbOpenHelper. Retrieve SQLiteDatabase the via getDatabase() */
-    private static RepsDbHelper dbHelper=null;
-
-
-    SQLiteDatabase getDatabase() {
-    	return dbHelper.getDatabase(getContext());
     }
 
     /** Request the REST client update the database for the given query URI.
      * */
     private void requestRestUpdate(Uri uri){
         SharedPreferences prefs = Representing.prefs();
+        Log.i(TAG,"requestRestUpdate");
 
         Uri remoteUri = whoIsMyRep.asRemote(uri);
 
@@ -212,7 +214,7 @@ public final class RepsProvider extends ContentProvider {
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         UriType uriType = matchUri(uri);
-        SQLiteDatabase db = getDatabase();
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         String id;
 
         int result = -1;
@@ -236,8 +238,7 @@ public final class RepsProvider extends ContentProvider {
 
     @Override public Uri insert(Uri uri, ContentValues values) {
         UriType uriType = matchUri(uri);
-        Context context = getContext();
-        SQLiteDatabase db = getDatabase();
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         long id;
 
         Uri resultUri;
@@ -259,7 +260,7 @@ public final class RepsProvider extends ContentProvider {
 
     @Override public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
             throws OperationApplicationException {
-        SQLiteDatabase db = getDatabase();
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.beginTransaction();
         try {
             int numOperations = operations.size();
@@ -281,7 +282,7 @@ public final class RepsProvider extends ContentProvider {
         Context context = getContext();
 
         // Pick the correct database for this operation
-        SQLiteDatabase db = getDatabase();
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         int numberInserted = 0;
         SQLiteStatement insertStmt;
@@ -290,9 +291,10 @@ public final class RepsProvider extends ContentProvider {
         try {
             switch (uriType) {
                 case REPS:
-                    insertStmt = db.compileStatement(getBulkInsertString(mTable));
+                	String tableName=uriType.getTableName();
+                    insertStmt = db.compileStatement(bulkInsertStatement(uriType.getTable(), null).toString());
                     for (ContentValues value : values) {
-                        bindValuesInBulkInsert(mTable, insertStmt, value);
+                        bindValuesInBulkInsert(uriType.getTable(), insertStmt, value);
                         insertStmt.execute();
                         insertStmt.clearBindings();
                     }
@@ -338,18 +340,15 @@ public final class RepsProvider extends ContentProvider {
 
 
         /* This innocuous little line kicks off the REST download process, while enabling the provider to load and return from the database. */
-    	requestRestUpdate(uri);
+    	//XXX this ran, even though the app crashed after //  requestRestUpdate(uri);
 
-
-        Cursor c = null;
-        SQLiteDatabase db = getDatabase();
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
 
 //      Perform the database query
-//        c = managedQuery(uriType.getTableName(), projection, selection, selectionArgs, null, null, sortOrder);
-        c = db.query(uriType.getTableName(), projection, selection, selectionArgs, null, null, sortOrder);
+        Cursor c = db.query(uriType.getTableName(), projection, selection, selectionArgs, null, null, sortOrder);
 
         if ((c != null) && !isTemporary()) {
-        	this.bHelper.mCursors.add(c);
+//        	this.dbHelper.mCursors.add(c);
         	// Register the cursor to watch the uri for changes
             c.setNotificationUri(getContext().getContentResolver(), uri);
         }
@@ -359,7 +358,7 @@ public final class RepsProvider extends ContentProvider {
 
     @Override public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
         UriType uriType = matchUri(uri);
-        SQLiteDatabase db = getDatabase();
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         int result = -1;
         switch (uriType) {
             case REP_BY_NAME:

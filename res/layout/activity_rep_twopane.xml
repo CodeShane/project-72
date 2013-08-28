@@ -8,7 +8,7 @@
     android:baselineAligned="false"
     android:orientation="horizontal"
     android:showDividers="middle"
-    tools:context=".RepresentativeListActivity" >
+    tools:context=".RepsListActivity" >
 
     <!--
     This layout is a two-pane layout for the Reps
@@ -17,7 +17,6 @@
     that replace the single-pane version of the layout with
     this two-pane version.
 
-    For more on layout aliases, see:
     -->
 
     <fragment

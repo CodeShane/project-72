@@ -10,6 +10,7 @@
     <string name="rep_name">Representative Name</string>
     <string name="rep_party">U</string>
     <string name="rep_state">DC</string>
+    <string name="no_results">Find your representatives; just enter your home zip code in the space above to </string>
     <string name="rep_district">District 14</string>
     <string name="rep_phone">+1 800 555 1234</string>
     <string name="rep_office">10 North Main Suite 1, Anytown, DC</string>

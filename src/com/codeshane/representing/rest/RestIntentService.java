@@ -26,7 +26,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.codeshane.representing.Representing;
-import com.codeshane.representing.providers.RepresentingContract;
+import com.codeshane.representing.providers.RepsContract;
+import com.codeshane.representing.providers.RepsContract.Representatives;
 import com.codeshane.representing.rest.HttpGetTask.OnHttpResponseListener;
 
 /** This service accepts standard ContentProvider requests,
@@ -117,7 +118,7 @@ public class RestIntentService extends IntentService implements OnHttpResponseLi
 			}
 			if (operations.size() > 0) {
 				try {
-					this.getContentResolver().applyBatch(RepresentingContract.AUTHORITY, operations);
+					this.getContentResolver().applyBatch(RepsContract.AUTHORITY, operations);
 				} catch (RemoteException ex) {
 					ex.printStackTrace();
 				} catch (OperationApplicationException ex) {

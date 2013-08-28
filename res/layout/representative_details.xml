@@ -3,5 +3,5 @@
     android:id="@+id/representative_detail_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".RepresentativeDetailActivity"
+    tools:context=".RepsDetailActivity"
     tools:ignore="MergeRootFrame" />
