@@ -8,8 +8,6 @@ import static com.codeshane.util.DbUtils.execSqlAsTransaction;
 import static com.codeshane.util.Tables.createTableStatement;
 import static com.codeshane.util.Tables.dropTableStatement;
 
-import java.util.ArrayList;
-
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -17,6 +15,7 @@ import android.database.sqlite.SQLiteTransactionListener;
 import android.util.Log;
 
 import com.codeshane.representing.meta.Table;
+import static com.codeshane.representing.providers.RepsContract.Tables;
 
 /**
  * @author  Shane Ian Robinson <shane@codeshane.com>
@@ -34,14 +33,10 @@ public class RepsDatabaseHelper extends SQLiteOpenHelper {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 	}
 
-	private static ArrayList<Table> mTables = new ArrayList<Table>();
-
-	public static final void addTable(Table t){ mTables.add(t); }
-
     /** Called only once in application life to create and populate the initial database. */
 	@Override public void onCreate ( SQLiteDatabase db ) {
 		StringBuilder sb = new StringBuilder();
-		for (Table table : mTables) {
+		for (Table table : Tables.values()) {
 			// Give each table the option to create itself.
 //			if(!table.onCreation(db)){
 				// create automatically
@@ -66,7 +61,7 @@ public class RepsDatabaseHelper extends SQLiteOpenHelper {
 	 * table will be deleted and re-created.
 	 * */
 	@Override public void onUpgrade ( SQLiteDatabase db, int oldVersion, int newVersion ) {
-		for (Table table : mTables) {
+		for (Table table : Tables.values()) {
 			StringBuilder sb = new StringBuilder();
 			// Give each table the option to upgrade itself.
 //			if (table.onUpgrade(db, oldVersion, newVersion)) {
