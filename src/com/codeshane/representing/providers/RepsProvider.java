@@ -116,11 +116,12 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 		return true;
 	}
 
-	//TODO refactor
-//	public static final Table reps = new RepsContract.Representatives();
-
     /** The URI categories that determine what a given URL is to be used for. */
     public static enum UriType {
+
+    	/* This is not evil magic; but pretend it is, and don't fiddle
+    	 * unless you know what you're doing. */
+
     	A("a", "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, Tables.Representatives),
         REPS(AUTHORITY.toString(), "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, Tables.Representatives),
         REPS_BY_ID(AUTHORITY.toString(), "/#", "", CURSOR_ITEM_BASE_TYPE, Tables.Representatives),
@@ -137,7 +138,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         private Table mTable;
 
         UriType(String authority, String matchPath, String pathPart, String type, Table table) {
-        	// enum.ordinal()			// identifier
+        	// enum.ordinal()			// identifier - do *not* persist, as adding/reordering static declarations will change it. use name() if necessary.
 	    	Log.i(TAG,"new UriType()");
         	mAuthority = authority;
         	mMatchPath = matchPath;
@@ -165,6 +166,8 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Classify a URI into a UriType, which determines how it is handled. */
     public static final UriType matchUri(Uri uri) {
+    	Log.v(TAG,"matchUri");
+    	/* I knew you were coming; the egg is gone. */
     	Log.v(TAG,"birthing a dragon");
         int match = sUriMatcher.match(uri);
         if (match < 0) {
@@ -176,7 +179,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Request the REST client update the database for the given query URI unless it has done so recently.
      * @see RepsProvider#requestRestUpdate(Uri) */
-    private void requestRestUpdate(Uri uri){
+    private void requestRestUpdate(Uri uri) {
     	Log.v(TAG,"requestRestUpdate");
         SharedPreferences prefs = Representing.prefs();
         if (prefs.getLong("lastUpdate", 0)+3600000<System.currentTimeMillis()){
@@ -186,12 +189,12 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Force the REST client to update the database for the given query URI.
      * @see RepsProvider#startRestUpdate(Uri) */
-    private void startRestUpdate(Uri uri){
-    	Log.v(TAG,"startRestUpdate");
+    private void startRestUpdate(Uri uri) {
+    	Log.v(TAG,"startRestUpdate - taking flight");
     	Context context = Representing.context();
     	Intent requestLatest = new Intent(Intent.ACTION_DEFAULT)
-    	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri) // Include the parcelable Uri
-    	.putExtra(RestIntentService.EXTRA_URI_REMOTE, whoIsMyRep.asRemote(uri)) // Include the parcelable Uri
+    	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri) // Include the Uri parcel
+    	.putExtra(RestIntentService.EXTRA_URI_REMOTE, whoIsMyRep.asRemote(uri)) // Include the Uri parcel
     	.setClass(context, RestIntentService.class);
     	context.sendBroadcast(requestLatest);
     }
@@ -242,8 +245,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         return resultUri;
     }
 
-    @Override public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations)
-            throws OperationApplicationException {
+    @Override public ContentProviderResult[] applyBatch(ArrayList<ContentProviderOperation> operations) throws OperationApplicationException {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         db.beginTransaction();
         try {

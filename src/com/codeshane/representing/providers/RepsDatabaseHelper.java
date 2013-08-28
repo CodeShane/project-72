@@ -25,12 +25,12 @@ import static com.codeshane.representing.providers.RepsContract.Tables;
 public class RepsDatabaseHelper extends SQLiteOpenHelper {
 	public static final String	TAG	= RepsDatabaseHelper.class.getPackage().getName() + "." + RepsDatabaseHelper.class.getSimpleName();
 
-	public static final String DATABASE_NAME = RepsContract.DATABASE_NAME;
+	public static final String NAME = RepsContract.DATABASE_NAME;
 
-	public static final int DATABASE_VERSION = 6;
+	public static final int VERSION = 1;
 
 	RepsDatabaseHelper ( Context context ) {
-		super(context, DATABASE_NAME, null, DATABASE_VERSION);
+		super(context, NAME, null, VERSION);
 	}
 
     /** Called only once in application life to create and populate the initial database. */
