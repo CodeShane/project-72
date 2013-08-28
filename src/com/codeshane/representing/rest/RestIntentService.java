@@ -27,7 +27,6 @@ import android.widget.Toast;
 
 import com.codeshane.representing.Representing;
 import com.codeshane.representing.providers.RepsContract;
-import com.codeshane.representing.providers.RepsContract.Representatives;
 import com.codeshane.representing.rest.HttpGetTask.OnHttpResponseListener;
 
 /** This service accepts standard ContentProvider requests,

@@ -2,9 +2,6 @@ package com.codeshane.representing.providers;
 
 import static android.content.ContentResolver.CURSOR_DIR_BASE_TYPE;
 import static android.content.ContentResolver.CURSOR_ITEM_BASE_TYPE;
-import static com.codeshane.representing.providers.RepsContract.AUTHORITY;
-import static com.codeshane.representing.providers.RepsContract.DATABASE_NAME;
-import static com.codeshane.representing.providers.RepsContract.Representatives.TABLE_NAME;
 import static com.codeshane.util.DbUtils.addColumnToSelectionArgs;
 import static com.codeshane.util.DbUtils.whereColumn;
 import static com.codeshane.util.DbUtils.whereWithId;
@@ -34,9 +31,11 @@ import android.util.Log;
 import com.codeshane.representing.C;
 import com.codeshane.representing.Representing;
 import com.codeshane.representing.meta.Table;
-import com.codeshane.representing.providers.RepsContract.Representatives.Columns;
+import static com.codeshane.representing.providers.RepsContract.Tables.Columns;
 import com.codeshane.representing.rest.RestIntentService;
 import com.codeshane.util.UriConverter;
+
+
 /** This ContentProvider serves the Representatives table.
  *
  * @author  Shane Ian Robinson <shane@codeshane.com>
@@ -47,19 +46,11 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
 	public static final String TAG = RepsProvider.class.getName();
 
-//	private Table mTable;
     private RepsDatabaseHelper dbHelper;
-    /** SqliteDbOpenHelper. Retrieve SQLiteDatabase the via getDatabase() */
 
-//    SQLiteDatabase getDatabase() {
-//    	Log.i(TAG,"getDatabase()");
-//    	if (null==dbHelper){
-//    		Log.e(TAG,"dbHelper was null!");
-//    		dbHelper = new RepsDatabaseHelper(this.getContext());
-//    	}
-//    	return dbHelper.getDatabase(getContext());
-//    }
-
+    /** This UriConverter converts Reps ContentProvider (local) URIs into URIs
+     * suitable for accessing the REST DSL of whoismyrepresentative.com.
+     * */
     private static final UriConverter whoIsMyRep = new UriConverter(){
     	private static final String AUTHORITY_REMOTE = "whoismyrepresentative.com";
 		@Override public Uri asRemote ( Uri uri ) {
@@ -75,7 +66,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
 			int qtyParams = segments.size();
 			if (qtyParams<2 || qtyParams>3 ) {
-				throw new RuntimeException("Invalid number of segments. There should be 2 or 3, found "+qtyParams+".");
+				throw new RuntimeException("Invalid number of segments. There should be 2 or 3, but found "+qtyParams+".");
 			}
 
 			String part = segments.get(0).concat(".php");
@@ -121,30 +112,31 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 	@Override public boolean onCreate () {
 		Log.d(TAG,"onCreate()");
 		dbHelper = new RepsDatabaseHelper(this.getContext());
+
 		return true;
 	}
 
-    public static final int DATABASE_VERSION = 1;
+	//TODO refactor
+//	public static final Table reps = new RepsContract.Representatives();
 
+    /** The URI categories that determine what a given URL is to be used for. */
     public static enum UriType {
-//        ALL(AUTHORITY, "/", "members", MIME_CURSOR_DIR, "ALL"),
-        // com.example.authority.Provider/table/123
-    	A("a", "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, TABLE_NAME),
-        REPS(AUTHORITY.toString(), "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, TABLE_NAME),
-        REPS_BY_ID(AUTHORITY.toString(), "/#", "", CURSOR_ITEM_BASE_TYPE, "REP_BY_ID"),
-        MEMS_BY_ZIP(AUTHORITY.toString(),"getall_mems/#", "getall_mems", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
-        REP_BY_NAME(AUTHORITY,"getall_reps_byname/*", "getall_reps_byname", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
-        REP_BY_STATE(AUTHORITY,"getall_reps_bystate/*", "getall_reps_bystate", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
-        SEN_BY_NAME(AUTHORITY,"getall_sens_byname/*", "getall_sens_byname", CURSOR_DIR_BASE_TYPE, TABLE_NAME),
-        SEN_BY_STATE(AUTHORITY,"getall_sens_bystate/*", "getall_sens_bystate", CURSOR_DIR_BASE_TYPE, TABLE_NAME);
+    	A("a", "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, Tables.Representatives),
+        REPS(AUTHORITY.toString(), "/", "", ContentResolver.CURSOR_DIR_BASE_TYPE, Tables.Representatives),
+        REPS_BY_ID(AUTHORITY.toString(), "/#", "", CURSOR_ITEM_BASE_TYPE, Tables.Representatives),
+        MEMS_BY_ZIP(AUTHORITY.toString(),"getall_mems/#", "getall_mems", CURSOR_DIR_BASE_TYPE, Tables.Representatives),
+        REP_BY_NAME(AUTHORITY,"getall_reps_byname/*", "getall_reps_byname", CURSOR_DIR_BASE_TYPE, Tables.Representatives),
+        REP_BY_STATE(AUTHORITY,"getall_reps_bystate/*", "getall_reps_bystate", CURSOR_DIR_BASE_TYPE, Tables.Representatives),
+        SEN_BY_NAME(AUTHORITY,"getall_sens_byname/*", "getall_sens_byname", CURSOR_DIR_BASE_TYPE, Tables.Representatives),
+        SEN_BY_STATE(AUTHORITY,"getall_sens_bystate/*", "getall_sens_bystate", CURSOR_DIR_BASE_TYPE, Tables.Representatives);
 
         private String mAuthority;
         private String mMatchPath;
         private String mPathPart;
         private String mType;
-        private String mTable;
+        private Table mTable;
 
-        UriType(String authority, String matchPath, String pathPart, String type, String table) {
+        UriType(String authority, String matchPath, String pathPart, String type, Table table) {
         	// enum.ordinal()			// identifier
 	    	Log.i(TAG,"new UriType()");
         	mAuthority = authority;
@@ -157,15 +149,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 		public String getMatchPath () { return mMatchPath; }
 		public String getPathPart() { return mPathPart; }
 		public String getType() { return mType; }
-		public String getTableName() { return mTable; }
-		/** @since Aug 28, 2013
-		 * @version Aug 28, 2013
-		 * @return Table
-		 */
-		public Table getTable () {
-			return null;
-
-		}
+		public Table getTable () { return mTable; }
 	}
 
 
@@ -181,34 +165,35 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Classify a URI into a UriType, which determines how it is handled. */
     public static final UriType matchUri(Uri uri) {
-    	Log.i(TAG,"birthing a dragon");
+    	Log.v(TAG,"birthing a dragon");
         int match = sUriMatcher.match(uri);
         if (match < 0) {
-//            throw new IllegalArgumentException("Unknown URI " + uri.toString());
-            //XXX For production:
         	Log.e(TAG, "Unknown URI "+uri.toString());
             return UriType.REPS;
         }
         return UriType.class.getEnumConstants()[match];
     }
 
-    /** Request the REST client update the database for the given query URI.
-     * */
+    /** Request the REST client update the database for the given query URI unless it has done so recently.
+     * @see RepsProvider#requestRestUpdate(Uri) */
     private void requestRestUpdate(Uri uri){
+    	Log.v(TAG,"requestRestUpdate");
         SharedPreferences prefs = Representing.prefs();
-        Log.i(TAG,"requestRestUpdate");
-
-        Uri remoteUri = whoIsMyRep.asRemote(uri);
-
-        //TODO Separate this to enable forcing
         if (prefs.getLong("lastUpdate", 0)+3600000<System.currentTimeMillis()){
-        	Context context = Representing.context();
-        	Intent requestLatest = new Intent(Intent.ACTION_DEFAULT)
-        	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri) // Include the parcelable Uri
-        	.putExtra(RestIntentService.EXTRA_URI_REMOTE, remoteUri) // Include the parcelable Uri
-        	.setClass(context, RestIntentService.class);
-        	context.sendBroadcast(requestLatest);
+        	startRestUpdate(uri);
         }
+    }
+
+    /** Force the REST client to update the database for the given query URI.
+     * @see RepsProvider#startRestUpdate(Uri) */
+    private void startRestUpdate(Uri uri){
+    	Log.v(TAG,"startRestUpdate");
+    	Context context = Representing.context();
+    	Intent requestLatest = new Intent(Intent.ACTION_DEFAULT)
+    	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri) // Include the parcelable Uri
+    	.putExtra(RestIntentService.EXTRA_URI_REMOTE, whoIsMyRep.asRemote(uri)) // Include the parcelable Uri
+    	.setClass(context, RestIntentService.class);
+    	context.sendBroadcast(requestLatest);
     }
 
     @Override
@@ -222,8 +207,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         switch (uriType) {
             case REP_BY_NAME:
                 id = uri.getPathSegments().get(1);
-                result = db.delete(uriType.getTableName(), "name = ?",
-                        addColumnToSelectionArgs(id, selectionArgs));
+                result = db.delete(uriType.getTable().name(), "name = ?", addColumnToSelectionArgs(id, selectionArgs));
                 break;
 			default:
 				break;
@@ -245,7 +229,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
         switch (uriType) {
             case REP_BY_NAME:
-            	id = db.insert(uriType.getTableName(), null, values);
+            	id = db.insert(uriType.getTable().name(), null, values);
                 resultUri = (id == -1) ? null : ContentUris.withAppendedId(uri, id);
                 break;
             default:
@@ -291,7 +275,6 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         try {
             switch (uriType) {
                 case REPS:
-                	String tableName=uriType.getTableName();
                     insertStmt = db.compileStatement(bulkInsertStatement(uriType.getTable(), null).toString());
                     for (ContentValues value : values) {
                         bindValuesInBulkInsert(uriType.getTable(), insertStmt, value);
@@ -338,22 +321,18 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 			default:
         }
 
+        /* MagicSync(TM) - initiate REST download process in background. */
+        requestRestUpdate(uri);
 
-        /* This innocuous little line kicks off the REST download process, while enabling the provider to load and return from the database. */
-    	//XXX this ran, even though the app crashed after //  requestRestUpdate(uri);
-
+        /* Perform the database query */
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-
-//      Perform the database query
-        Cursor c = db.query(uriType.getTableName(), projection, selection, selectionArgs, null, null, sortOrder);
+        Cursor c = db.query(uriType.getTable().name(), projection, selection, selectionArgs, null, null, sortOrder);
 
         if ((c != null) && !isTemporary()) {
-//        	this.dbHelper.mCursors.add(c);
         	// Register the cursor to watch the uri for changes
             c.setNotificationUri(getContext().getContentResolver(), uri);
         }
         return c;
-
     }
 
     @Override public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
@@ -363,12 +342,11 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         switch (uriType) {
             case REP_BY_NAME:
                 String id = uri.getPathSegments().get(1);
-                result = db.update(uriType.getTableName(), values, whereWithId(selection),
+                result = db.update(uriType.getTable().name(), values, whereWithId(selection),
                     addColumnToSelectionArgs(id, selectionArgs));
                 break;
                 default:
         }
-
         getContext().getContentResolver().notifyChange(uri, null);
         return result;
     }

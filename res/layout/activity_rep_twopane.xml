@@ -21,14 +21,14 @@
 
     <fragment
         android:id="@+id/rep_list"
-        android:name="com.codeshane.representing.RepresentativeListFragment"
+        android:name="com.codeshane.representing.RepsListFragment"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         tools:layout="@android:layout/list_content" />
 
     <FrameLayout
-        android:id="@+id/representative_detail_container"
+        android:id="@+id/rep_detail_container"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="3" />

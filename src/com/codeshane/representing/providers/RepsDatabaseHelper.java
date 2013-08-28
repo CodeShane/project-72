@@ -34,45 +34,26 @@ public class RepsDatabaseHelper extends SQLiteOpenHelper {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 	}
 
-	/** No longer needed as CursorLoaders handle closing cursors. */
-//	private final ArrayList<Cursor> mCursors = new ArrayList<Cursor>();
+	private static ArrayList<Table> mTables = new ArrayList<Table>();
 
-	private static final ArrayList<Table> mTables;
-	static {
-		mTables = new ArrayList<Table>();
-		mTables.add(new RepsContract.Representatives());
-	}
-
-	/** Synchronized access only. Get via {@link RepsDatabaseHelper#getDatabase(Context)} only. */
-//	private SQLiteDatabase mDatabase = null;
-
-    /** Gets the cached database or loads it again.
-     * @param context
-     * @return SQLiteDatabase
-     * @see SQLiteOpenHelper#getWritableDatabase()
-     * */
-//    @SuppressWarnings("deprecation")
-//    public synchronized SQLiteDatabase getDatabase(Context context) {
-//        // Return the cached database (if available.)
-//        if (mDatabase == null || !mDatabase.isOpen()) {
-//            mDatabase = getWritableDatabase();
-//        }
-//        Log.i(TAG,"mDatabase==null?"+(null==mDatabase));
-//        Log.i(TAG,"mDatabase.isOpen()"+mDatabase.isOpen());
-//
-//        return mDatabase;
-//    }
+	public static final void addTable(Table t){ mTables.add(t); }
 
     /** Called only once in application life to create and populate the initial database. */
 	@Override public void onCreate ( SQLiteDatabase db ) {
 		StringBuilder sb = new StringBuilder();
 		for (Table table : mTables) {
-			if(!table.onCreation(db)){
+			// Give each table the option to create itself.
+//			if(!table.onCreation(db)){
+				// create automatically
 				sb = createTableStatement(table, sb);
-			}
+//			}
 		}
-		Log.v(TAG,"Transaction: "+sb.toString());
-		execSqlAsTransaction(sb.toString(), db);
+		Log.v(TAG,"Create Transaction: "+sb.toString());
+		if (sb.length() > 15) {
+			execSqlAsTransaction(sb.toString(), db);
+		} else {
+			Log.e(TAG,"Invalid Transaction.");
+		}
 	}
 
 	public static final SQLiteTransactionListener transactionListener = new SQLiteTransactionListener() {
@@ -87,47 +68,19 @@ public class RepsDatabaseHelper extends SQLiteOpenHelper {
 	@Override public void onUpgrade ( SQLiteDatabase db, int oldVersion, int newVersion ) {
 		for (Table table : mTables) {
 			StringBuilder sb = new StringBuilder();
-			if (table.onUpgrade(db, oldVersion, newVersion)) {
+			// Give each table the option to upgrade itself.
+//			if (table.onUpgrade(db, oldVersion, newVersion)) {
 				// TODO simple migrations - Upgrades should be handled in a more realistic fashion, not just drop & replace...
+				// default to drop-create
 				sb = dropTableStatement(table, sb);
 				sb = createTableStatement(table, sb);
+//			}
+			Log.v(TAG,"Upgrade Transaction: "+sb.toString());
+			if (sb.length() > 15) {
+				execSqlAsTransaction(sb.toString(), db);
+			} else {
+				Log.e(TAG,"Invalid Transaction.");
 			}
-			Log.v(TAG,"Transaction: "+sb.toString());
-			execSqlAsTransaction(sb.toString(), db);
 		}
 	}
-
-	@Override public void onOpen ( SQLiteDatabase db ) {}
-
-	/* This is all handled by CursorLoaders now.
-	// Used to Close Cursors, MySqlDatabase, and DbHelper in that specific (correct) order.
-	@Override public synchronized void close () {
-
-
-		if (null != mCursors) {
-			for (Cursor c : mCursors) {
-				try {
-					c.close();
-				} catch (Exception e) {
-					Log.e(TAG, "c.close() ex: " + e.getMessage());
-					e.printStackTrace();
-				}
-			}
-		}
-		if (null != mDatabase) {
-				try {
-					mDatabase.close();
-					mDatabase = null;
-				} catch (Exception e) {
-					Log.e(TAG, "mDatabase.close() ex: " + e.getMessage());
-					e.printStackTrace();
-				}
-		}
-		try {
-			super.close();
-		} catch (Exception e) {
-			Log.e(TAG, "dbhelper.close() ex: " + e.getMessage());
-			e.printStackTrace();
-		}
-	}*/
 }
