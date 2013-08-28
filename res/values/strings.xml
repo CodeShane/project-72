@@ -10,7 +10,6 @@
     <string name="rep_name">Representative Name</string>
     <string name="rep_party">U</string>
     <string name="rep_state">DC</string>
-    <string name="no_results">Find your representatives; just enter your home zip code in the space above to </string>
     <string name="rep_district">District 14</string>
     <string name="rep_phone">+1 800 555 1234</string>
     <string name="rep_office">10 North Main Suite 1, Anytown, DC</string>
@@ -24,5 +23,7 @@
     <string name="rep_website_label">Website</string>
     <string name="loading">loading...</string>
     <string name="edit_text_title">Edit</string>
+    <string name="no_results">Sorry, I couldn\'t find any results.</string>
+    <string name="no_details">Find your representatives! Just enter your home zip code to get started.</string>
 
 </resources>
