@@ -11,7 +11,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.content.ContentValues;
-import android.util.Log;
+import com.codeshane.util.Log;
 
 import com.codeshane.representing.providers.Rep;
 
@@ -27,12 +27,27 @@ public class WhoIsMyRepresentativeJsonParser {
 	 * @param jsonResponse A json-formatted string from the indicated API.
 	 * @return repItems ArrayList of RepItem */
 	public static final ArrayList<ContentValues> parseJsonResult (String jsonResult){
-		ArrayList<Rep> repItems = new ArrayList<Rep>();
 		ArrayList<ContentValues> contentValues = new ArrayList<ContentValues>();
+
+		if (null==jsonResult) {
+			Log.e(TAG,"Can't parse a null String");
+			return contentValues;
+		}
+		if (jsonResult.equalsIgnoreCase("")) {
+			Log.e(TAG,"Can't parse an empty String");
+			return contentValues;
+		}
+		if (jsonResult.equalsIgnoreCase("<result message='No Data Found' />")) {
+			Log.i(TAG,"Returned correctly, but no results.");
+			return contentValues;
+		}
+
+		ArrayList<Rep> repItems = new ArrayList<Rep>();
 
 		try {
 			JSONObject jsonRoot = new JSONObject(jsonResult);
 			JSONArray results = jsonRoot.getJSONArray("results");
+
 			for (int i = 0; i < results.length(); i++) {
 				JSONObject item = results.getJSONObject(i);
 

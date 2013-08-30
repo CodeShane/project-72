@@ -8,6 +8,7 @@ import static com.codeshane.util.DbUtils.whereWithId;
 import static com.codeshane.util.Tables.bindValuesInBulkInsert;
 import static com.codeshane.util.Tables.bulkInsertStatement;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -27,15 +28,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
-import android.util.Log;
 
-import com.codeshane.representing.C;
+import com.codeshane.util.Log;
+import com.codeshane.util.ProviderConstants;
 import com.codeshane.representing.Representing;
 import com.codeshane.representing.meta.Table;
 
 import static com.codeshane.representing.providers.RepsContract.Tables.Columns;
 
 import com.codeshane.representing.rest.RestIntentService;
+import com.codeshane.representing.rest.Route;
 import com.codeshane.util.UriConverter;
 
 
@@ -55,49 +57,54 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
      * suitable for accessing the REST DSL of whoismyrepresentative.com.
      * */
     private static final UriConverter whoIsMyRep = new UriConverter(){
+    	//TODO extract & refactor class
     	private static final String AUTHORITY_REMOTE = "whoismyrepresentative.com";
+
 		@Override public Uri asRemote ( Uri uri ) {
 
 	    	Log.i(TAG,"asRemote()");
 			UriType uriType = RepsProvider.matchUri(uri);
 
-			Uri.Builder build = new Uri.Builder();
-			build.scheme(C.SCHEME_HTTP);
-			build.authority(AUTHORITY_REMOTE);
-
 			List<String> segments = uri.getPathSegments();
 
 			int qtyParams = segments.size();
 			if (qtyParams<2 || qtyParams>3 ) {
-				throw new RuntimeException("Invalid number of segments. There should be 2 or 3, but found "+qtyParams+".");
+				Log.w(TAG,"Invalid number of segments. There should be 2 or 3, but found "+qtyParams+".");
 			}
 
-			String part = segments.get(0).concat(".php");
-			build.appendEncodedPath(part);
+			String partial = segments.get(0).concat(".php");
+
+			Uri.Builder build = new Uri.Builder();
+			build.scheme(ProviderConstants.SCHEME_HTTP);
+			build.authority(AUTHORITY_REMOTE);
+			build.appendEncodedPath(partial);
 
 			// Now get the name, zip, or state:
-			part = segments.get(1);
+			if (segments.size()>1){
+				partial = segments.get(1);
+			} else {
+				partial = "";
+			}
 
 			switch (uriType) {
 				case MEMS_BY_ZIP:
-					String zip = segments.get(1);
-					int zl = zip.length();
+					int zl = partial.length();
 					if (zl==5 || zl==9) {
-						build.appendQueryParameter("zip", zip.substring(0, 5));
-					} else if (zl==9) {
-						build.appendQueryParameter("zip", zip.substring(0, 5));
-						build.appendQueryParameter("zip4", zip.substring(5, 9));
+						build.appendQueryParameter("zip", partial.substring(0, 5));
+					}
+					if (zl==9) {
+						build.appendQueryParameter("zip4", partial.substring(5, 9));
 					} else {
-						throw new IllegalArgumentException("ZIP malformed");
+						Log.w(TAG,"ZIP empty or malformed - expected length 5 or 9, not "+zl);
 					}
 					break;
 				case REP_BY_NAME:
 				case SEN_BY_NAME:
-					build.appendQueryParameter("name", part);
+					build.appendQueryParameter("name", partial);
 					break;
 				case REP_BY_STATE:
 				case SEN_BY_STATE:
-					build.appendQueryParameter("state", part);
+					build.appendQueryParameter("state", partial);
 					break;
 				default:
 					break;
@@ -140,12 +147,12 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         private String mType;
         private Table mTable;
 
-        UriType(String authority, String matchPath, String pathPart, String type, Table table) {
+        UriType(String authority, String matchPath, String pathPart, String baseType, Table table) {
         	// enum.ordinal()			// identifier - do *not* persist, as adding/reordering static declarations will change it. use name() if necessary.
         	mAuthority = authority;
         	mMatchPath = matchPath;
         	mPathPart = pathPart;
-            mType = type+C.VND+table;
+            mType = baseType + ProviderConstants.VND + AUTHORITY + table.name();
             mTable = table;
         }
 		public String getAuthority() { return mAuthority; }
@@ -168,7 +175,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Classify a URI into a UriType, which determines how it is handled. */
     public static final UriType matchUri(Uri uri) {
-    	Log.v(TAG,"matchUri");
+    	Log.v(TAG,"matchUri"+uri.toString());
     	/* I knew you were coming; the egg is gone. */
     	Log.v(TAG,"birthing a dragon");
         int match = sUriMatcher.match(uri);
@@ -193,12 +200,16 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
      * @see RepsProvider#startRestUpdate(Uri) */
     private void startRestUpdate(Uri uri) {
     	Log.v(TAG,"startRestUpdate..");
+    	Uri remoteUri = whoIsMyRep.asRemote(uri);
+    	if (null==remoteUri) return;
+
     	Context context = this.getContext().getApplicationContext();
     	Intent requestLatest = new Intent(RestIntentService.ACTION_QUERY)
-    	.putExtra(RestIntentService.EXTRA_URI_LOCAL, uri.toString())
-    	.putExtra(RestIntentService.EXTRA_URI_REMOTE, whoIsMyRep.asRemote(uri).toString())
+    	.putExtra(Route.EXTRA_URI_LOCAL, uri)
+    	.putExtra(Route.EXTRA_URI_REMOTE,  remoteUri)
     	.setClass(this.getContext().getApplicationContext(), RestIntentService.class);
     	Log.v(TAG,".. taking flight");
+
     	context.startService(requestLatest);
     }
 

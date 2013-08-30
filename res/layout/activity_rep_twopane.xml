@@ -16,7 +16,6 @@
     res/values-sw600dp/refs.xml for an example of layout aliases
     that replace the single-pane version of the layout with
     this two-pane version.
-
     -->
 
     <fragment

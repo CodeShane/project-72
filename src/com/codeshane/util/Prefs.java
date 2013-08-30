@@ -7,7 +7,7 @@ package com.codeshane.util;
 import android.annotation.TargetApi;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.util.Log;
+import com.codeshane.util.Log;
 
 /** Can't use my Sprefs because it uses androidannotations, I don't need them, and I'm a bit rushed so
  * lets just make a utility tool real quick instead..
@@ -24,7 +24,7 @@ public class Prefs {
 	 * @see SharedPreferences.Editor#commit()
 	 * */
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
-	public boolean commit(final SharedPreferences prefs, final SharedPreferences.Editor e) {
+	public static final boolean commit(final SharedPreferences prefs, final SharedPreferences.Editor e) {
 		Thread t = new Thread(new Runnable(){
 			@Override public void run () {
 				Log.v(TAG, "commit() runnable.run() starting on " + Thread.currentThread().getName());

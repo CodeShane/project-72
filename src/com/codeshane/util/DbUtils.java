@@ -8,7 +8,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteTransactionListener;
 import android.provider.BaseColumns;
-import android.util.Log;
+import com.codeshane.util.Log;
 
 import com.codeshane.representing.meta.Column;
 
@@ -88,13 +88,11 @@ public class DbUtils {
 	// TODO simple migrations - Upgrades should be handled in a more realistic fashion, not just drop & replace...
 
 	public static final boolean execSqlAsTransaction (String statement, SQLiteDatabase db){
-		if (null==statement || null==db) {
-			if (null==statement) {
-				Log.e(TAG,"Can't perform SqlTransaction without statement.");
-			}
-			else if (null==db) {
-				Log.e(TAG,"Can't perform SqlTransaction without db.");
-			}
+		if (null==statement) {
+			throw new NullPointerException("Can't perform SqlTransaction without statement.");
+		}
+		if (null==db) {
+			throw new NullPointerException("Can't perform SqlTransaction without db.");
 		}
 		boolean success=false;
 		db.beginTransactionWithListener(transactionListener);

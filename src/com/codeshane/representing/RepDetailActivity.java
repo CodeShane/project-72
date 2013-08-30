@@ -24,7 +24,7 @@ public class RepDetailActivity extends FragmentActivity {
 	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
 	@Override protected void onCreate ( Bundle savedInstanceState ) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.rep_details);
+		setContentView(R.layout.rep_details_frame);
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB){
 			// Show the Up button in the action bar.
@@ -36,10 +36,8 @@ public class RepDetailActivity extends FragmentActivity {
 		// http://developer.android.com/guide/components/fragments.html
 		if (savedInstanceState == null) {
 			// Create the detail fragment and add it to the activity using a fragment transaction.
-			Bundle arguments = new Bundle();
-			arguments.putString(RepDetailFragment.ARG_ITEM_ID, getIntent().getStringExtra(RepDetailFragment.ARG_ITEM_ID));
 			RepDetailFragment fragment = new RepDetailFragment();
-			fragment.setArguments(arguments);
+			//fragment.setArguments(arguments);
 			getSupportFragmentManager().beginTransaction().add(R.id.rep_detail_container, fragment).commit();
 		}
 	}

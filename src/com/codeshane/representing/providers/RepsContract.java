@@ -4,11 +4,12 @@
 
 package com.codeshane.representing.providers;
 
+import android.content.ContentResolver;
 import android.net.Uri;
 
-import com.codeshane.representing.C;
 import com.codeshane.representing.meta.Column;
 import com.codeshane.representing.meta.Table;
+import com.codeshane.util.ProviderConstants;
 
 /** Operational specification contract for the "Reps" ContentProvider and all tables it provides.
  *
@@ -16,10 +17,7 @@ import com.codeshane.representing.meta.Table;
  * @since Aug 19, 2013
  * @version 3
  * Common practices?
- * @see android.provider.BaseColumns
- * @see android.provider.CalendarContract
- * @see android.provider.CalendarContract.CalendarColumns
- * @see android.provider.CalendarContract.SyncColumns
+
  * */
 public interface RepsContract {
 
@@ -30,7 +28,7 @@ public interface RepsContract {
 	/** The authority for the ContentProvider of this data */
     public static final String AUTHORITY = VENDOR + "." + PROJECT;
 
-    public static final Uri URI_BASE = Uri.parse(C.SCHEME_CONTENT + C.SCHEME_SUFFIX + AUTHORITY);
+    public static final Uri URI_BASE = Uri.parse(ContentResolver.SCHEME_CONTENT + ProviderConstants.SCHEME_SUFFIX + AUTHORITY);
 
     public static final String DATABASE_NAME = "RepresentingDB";
 
@@ -67,10 +65,10 @@ public interface RepsContract {
 		@Override public Column[] columns() { return Columns.values(); }
 
 		/** The MIME type of {@link #CONTENT_URI} providing a directory of content items. */
-		public final String getDirMimeType() { return C.MIME_CURSOR_DIR_VND + VENDOR + "." + name(); }
+		public final String getDirMimeType() { return ContentResolver.CURSOR_DIR_BASE_TYPE + VENDOR + "." + name(); }
 
 		/** The MIME type of a {@link #CONTENT_URI} a single content item. */
-		public final String getItemMimeType() { return C.MIME_CURSOR_ROW_VND + VENDOR + "." + name(); }
+		public final String getItemMimeType() { return ContentResolver.CURSOR_ITEM_BASE_TYPE + VENDOR + "." + name(); }
 
 		public static enum Columns implements Column {
 

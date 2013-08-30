@@ -4,9 +4,15 @@
 
 package com.codeshane.representing;
 
+import com.codeshane.representing.BuildConfig;
+import com.codeshane.util.Bitwise;
+import com.codeshane.util.Log;
+import com.codeshane.util.StrictModes;
+
 import android.app.Application;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 
 /**
  * @author  Shane Ian Robinson <shane@codeshane.com>
@@ -14,15 +20,49 @@ import android.content.SharedPreferences;
  * @version 1
  */
 public class Representing extends Application {
-	public static final String	TAG	= Representing.class.getPackage().getName() + "." + Representing.class.getSimpleName();
+	public static final String	TAG	= Representing.class.getName();
+	public static final String	PACKAGE	= Representing.class.getPackage().getName();
+
+	/** Debug mode state.
+	 * <p>Used so compiler will automatically remove all code blocks of ({@code if (DEBUG){}} (which should proceed all calls to Log)</p>
+	 * (@link http://code.google.com/p/android/p/android/issues/detail?id=27940 :Android Bug 27940}
+	 * @DevNote Isn't read from AndroidManifest.xml so when false, {@code if(DEBUG)...} statements can be removed by compiler as dead/unreachable code.</p>
+	 * @DevNote Eclipse generated BuildConfig.DEBUG doesn't work properly.
+	 * */
+	public static final boolean DEBUG = false;
+
+	/** Strict mode state.
+	 * <p>Used to test app latency and quickly assess potential ANRs.</p>
+	 * */
+	public static final boolean STRICT_MODE = false;
 
 	private static Context mAppContext;
 	private static SharedPreferences mPrefs;
 
 	@Override public void onCreate() {
 		super.onCreate();
+		Log.setUseLogcat(DEBUG);
+
 		mAppContext = getApplicationContext();
-		mPrefs = this.getSharedPreferences("com.codeshane.project_72_preferences", 0);
+		mPrefs = this.getSharedPreferences(PACKAGE+"_preferences", 0);
+
+		if (!DEBUG) { return; }
+
+		StringBuilder sb = new StringBuilder();
+
+		if (STRICT_MODE) { StrictModes.setStrictMode(); sb.append("/ IS STRICT /"); }
+
+		int flags = this.getApplicationInfo().flags;
+
+		// DEBUG must match AndroidManifest to enable debugging and preventing release-mode info & performance leaks.
+		// Should only occur if there is some kind of build error.
+		boolean debugflag = Bitwise.isSet(ApplicationInfo.FLAG_DEBUGGABLE, flags);
+		sb.append(DEBUG?"/ IS_APP_DEBUG /":"/ not_app_debug /");
+		sb.append(DEBUG!=debugflag?"/ MIS_SET /":"/ == /");
+		sb.append(debugflag?"/ IS_FLAG_DEBUGGABLE /":"/ not_flag_debuggable /");
+		sb.append(BuildConfig.DEBUG?"/ IS_BUILD_DEBUG /":"/ not_build_debug /");
+		sb.append(Bitwise.isSet(ApplicationInfo.FLAG_TEST_ONLY, flags)?"/ FLAG_TEST_ONLY /":"/ not_flagtest_only_ /");
+		Log.println(((DEBUG != debugflag)?Log.ERROR:Log.INFO), TAG, sb.toString());
 	}
 
 	/**

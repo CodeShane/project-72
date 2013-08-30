@@ -7,6 +7,11 @@ package com.codeshane.representing;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.TextView;
+
+import com.codeshane.util.Views;
 
 /** An activity representing a list of Reps. This activity
  * has different presentations for handset and tablet-size devices. On
@@ -23,6 +28,10 @@ import android.support.v4.app.FragmentActivity;
  * interface
  * to listen for item selections. */
 public class RepsListActivity extends FragmentActivity implements RepsListFragment.OnItemSelectedListener {
+	protected static final String	TAG	= RepsListActivity.class.getSimpleName();
+
+	/* Identifier for the currently selected item */
+	protected static final String	ITEM_ID = "item_id";
 
 	/** Whether or not the activity is in two-pane mode, i.e. running on a tablet
 	 * device. */
@@ -30,7 +39,7 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 
 	@Override protected void onCreate ( Bundle savedInstanceState ) {
 		super.onCreate(savedInstanceState);
-			setContentView(R.layout.reps_list_activity);
+			setContentView(R.layout.reps_list_fragment);
 			if (findViewById(R.id.rep_detail_container) != null) {
 				// The detail container view present only in large-screen layouts
 				// (res/values-large and res/values-sw600dp) for two-pane mode.
@@ -41,8 +50,15 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 				((RepsListFragment) getSupportFragmentManager().findFragmentById(R.id.rep_list)).setActivateOnItemClick(true);
 			}
 
+			TextView empty = (TextView) this.findViewById(android.R.id.empty);
+			View root = this.findViewById(R.id.rep_list);
+			root.setBackgroundResource(android.R.color.darker_gray);
+			Views.setSubdued(empty, 0.8f, true); //TODO find/make a text style
+
 		    // If exposing deep links into your app, handle intents here.
 	}
+
+	EditText editZip;
 
 	/** Callback method from {@link RepresentativeListFragment.OnItemSelectedListener} indicating that
 	 * the item with the given ID has been selected. */
@@ -53,7 +69,7 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 			// fragment transaction.
 			Bundle arguments = new Bundle();
 			//Pass the new item id to a new fragment, let it find its data
-			arguments.putString(RepDetailFragment.ARG_ITEM_ID, id);
+			arguments.putString(ITEM_ID, id);
 			RepDetailFragment fragment = new RepDetailFragment();
 			fragment.setArguments(arguments);
 			getSupportFragmentManager().beginTransaction().replace(R.id.rep_detail_container, fragment).commit();
@@ -61,9 +77,8 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 			// In single-pane mode, simply start the detail activity
 			// for the selected item ID.
 			Intent detailIntent = new Intent(this, RepDetailActivity.class);
-			detailIntent.putExtra(RepDetailFragment.ARG_ITEM_ID, id);
+			detailIntent.putExtra(ITEM_ID, id);
 			startActivity(detailIntent);
-
 		}
 	}
 }

@@ -4,10 +4,22 @@
 
 package com.codeshane.representing.providers;
 
+import android.content.ContentResolver;
+
 /**
  * @author  Shane Ian Robinson <shane@codeshane.com>
  * @since   Aug 28, 2013
  * @version 1
+ *
+ * @see android.provider.BaseColumns
+ * @see android.provider.CalendarContract
+ * @see android.provider.CalendarContract.CalendarColumns
+ * @see android.provider.CalendarContract.SyncColumns
+ * @see ContentResolver.SCHEME_ANDROID_RESOURCE
+ * @see ContentResolver.SCHEME_FILE
+ * @see ContentResolver.SCHEME_ANDROID_RESOURCE
+ * @see ContentResolver.CURSOR_ITEM_BASE_TYPE
+ * @see ContentResolver.CURSOR_DIR_BASE_TYPE
  */
 @Deprecated // WIP // still considering interop advantages/disadvantages..
 public interface ContentContract {

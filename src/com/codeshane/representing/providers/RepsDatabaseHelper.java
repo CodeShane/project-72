@@ -12,7 +12,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteTransactionListener;
-import android.util.Log;
+import com.codeshane.util.Log;
 
 import com.codeshane.representing.meta.Table;
 import static com.codeshane.representing.providers.RepsContract.Tables;
