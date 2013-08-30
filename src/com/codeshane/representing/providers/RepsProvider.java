@@ -8,7 +8,6 @@ import static com.codeshane.util.DbUtils.whereWithId;
 import static com.codeshane.util.Tables.bindValuesInBulkInsert;
 import static com.codeshane.util.Tables.bulkInsertStatement;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 
