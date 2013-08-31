@@ -51,22 +51,23 @@ public class WhoIsMyRepresentativeJsonParser {
 			for (int i = 0; i < results.length(); i++) {
 				JSONObject item = results.getJSONObject(i);
 
-				if(i==0){
-					JSONArray names = item.names();
-					int q = names.length();
-					for (int j = 0; j < q; j++) {
-						Log.i(TAG,"jsonName="+names.optString(j,""));
-					}
-				}
+//				if(i==0){
+//					JSONArray names = item.names();
+//					int q = names.length();
+//					for (int j = 0; j < q; j++) {
+//						Log.i(TAG,"jsonName="+names.optString(j,""));
+//					}
+//				}
 
 				Rep ri = Rep.update(null,item);
 				if (null!=ri){
-					Log.i(TAG,"RepItem!!>>>"+ri.toJson()+">>>"+ri.toString());
+//					Log.i(TAG,"RepItem!!>>>"+ri.toJson()+">>>"+ri.toString());
 					repItems.add(ri);
 					contentValues.add(ri.toContentValues());
-				} else {
-					Log.e(TAG, "RepItem didn't hatch..");
 				}
+//				else {
+//					Log.e(TAG, "RepItem didn't hatch..");
+//				}
 
 			}
 		} catch (JSONException ex) {

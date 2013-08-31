@@ -34,8 +34,8 @@ import com.codeshane.util.Log;
 		super();
 		this.mLocal = mLocal;
 		this.mRemote = mRemote;
-		Log.v(TAG,  "new Route - mLocal".concat(mLocal.toString()));
-		Log.v(TAG,  "new Route - mRemote".concat(mRemote.toString()));
+//		Log.v(TAG,  "new Route - mLocal".concat(mLocal.toString()));
+//		Log.v(TAG,  "new Route - mRemote".concat(mRemote.toString()));
 	}
 	public Uri getLocal () { return mLocal; }
 	public Uri getRemote () { return mRemote; }

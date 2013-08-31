@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-
+import java.util.Set;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -19,7 +19,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-
+import android.annotation.TargetApi;
 import android.app.IntentService;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -27,9 +27,10 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.OperationApplicationException;
 import android.content.res.Configuration;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.RemoteException;
-
 import com.codeshane.representing.Representing;
 import com.codeshane.representing.providers.RepsContract;
 import com.codeshane.util.Log;
@@ -66,6 +67,7 @@ public class RestIntentService extends IntentService {
 	public RestIntentService () {
 		super(RestIntentService.class.getName());
 		this.setIntentRedelivery(true);
+		Log.setUseLogcat(true);
 		Utils.threax("RestIntentService");
 	}
 
@@ -77,7 +79,7 @@ public class RestIntentService extends IntentService {
 	/** Worker thread.
 	 * @see android.app.IntentService#onHandleIntent(android.content.Intent) */
 	@Override protected void onHandleIntent ( Intent intent ) {
-		Log.v(TAG, "onHandleIntent");
+//		Log.v(TAG, "onHandleIntent");
 		Utils.threax("onHandleIntent");
 		// Get all necessary data from intent; log & return if we can't.
 
@@ -117,7 +119,7 @@ public class RestIntentService extends IntentService {
 
 
 		/* Log response status, headers*/
-		logHeaders(TAG, httpResponse);
+		Utils.toLog(TAG, httpResponse);
 
 
 		/* Extract httpEntity from httpResponse */
@@ -145,23 +147,36 @@ public class RestIntentService extends IntentService {
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
-		if (null==content) { Log.v(TAG, "content null"); return; } else { Log.v(TAG, "content = "+content); }
+		if (null==content) { Log.e(TAG, "content null"); return; } else { Log.v(TAG, "content = "+content); }
 
 
 		/* Parse content String into a List of ContentValues */
 
 		ArrayList<ContentValues> items = WhoIsMyRepresentativeJsonParser.parseJsonResult(content);
-		Log.v(TAG, "Parsed items: "+items.size());
-
+//		Log.v(TAG, "Parsed items: "+items.size());
+		if (items.size()==0) { Log.e(TAG,"no items"); return; }
 
 		/* Generate a ContentProviderOperation for each ContentValues item. */
 
 		ArrayList<ContentProviderOperation> operations = new ArrayList<ContentProviderOperation>();
 		for (ContentValues item : items) {
-			operations.add(ContentProviderOperation.newInsert(route.getLocal()).withValues(item).build());
+			if (null==item) {
+				Log.e(TAG,"null item"); break;
+			}
+//			dump(item);
+			Route a = route;
+			Uri b = a.getLocal();
+			ContentProviderOperation.Builder c = ContentProviderOperation.newInsert(b);
+			ContentValues d = item;
+			if (null==c) {
+				Log.e(TAG,"c is null?");
+			}
+			c.withValues(d);
+			Log.i(TAG,"operations ="+operations.size()+"+");
+			operations.add(c.build());
 		}
 		if (operations.size()==0) { Log.e(TAG,"no operations"); return; }
-
+		Log.i(TAG,"operations="+operations.size());
 
 		/* Execute the ContentProviderOperations */
 
@@ -178,45 +193,45 @@ public class RestIntentService extends IntentService {
 
 	}
 
-	/** @since Aug 29, 2013
-	 * @version Aug 29, 2013
+	/** @since Aug 30, 2013
+	 * @version Aug 30, 2013
 	 * @return void
 	 */
-	private static final void logHeaders ( String tag, HttpResponse httpResponse ) {
-		try {
-			Log.v(tag, httpResponse.getStatusLine().getStatusCode() + httpResponse.getStatusLine().getReasonPhrase());
-		} catch (Exception ex) {}
-
-		Header[] headers = httpResponse.getAllHeaders();
-		for (Header header : headers) {
-			Log.v(tag, header.getName() + ":" + header.getValue());
+	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
+	private void dump ( ContentValues item ) {
+		Log.v(TAG,"dump(ContentValues)..");
+		if (null==item) { Log.v(TAG,"dump(ContentValues) item==null"); return; }
+		Set<String> keySet = item.keySet();
+		for (String key: keySet){
+			Log.v(TAG,"dump(ContentValues) item:"+item.getAsString(key));
 		}
+		Log.v(TAG,"..dump(ContentValues)");
 	}
 
-	/** Startup with basic parameters and initiate a rest request to the given url.
-	 * @since Aug 29, 2013
-	 * @version Aug 29, 2013
-	 * @return HttpResponse
-	 */
-	private static final HttpResponse simpleRestRequest (String url) {
-		Utils.disableLegacyKeepAlive();
-
-	    HttpParams httpParameters = new BasicHttpParams();
-	    HttpConnectionParams.setConnectionTimeout(httpParameters, 5000);
-	    HttpConnectionParams.setSoTimeout(httpParameters, 5000);
-	    HttpClient httpClient = new DefaultHttpClient(httpParameters);
-	    HttpUriRequest httpUriRequest = null;
-
-	    HttpResponse httpResponse = null;
-
-		httpUriRequest = new HttpGet(url);
-		try {
-			httpResponse = httpClient.execute(httpUriRequest);
-		} catch (UnknownHostException ex) {
-			Log.w(TAG, "Unable to connect to REST server.");
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return httpResponse;
-	}
+//	/** Startup with basic parameters and initiate a rest request to the given url.
+//	 * @since Aug 29, 2013
+//	 * @version Aug 29, 2013
+//	 * @return HttpResponse
+//	 */
+//	private static final HttpResponse simpleRestRequest (String url) {
+//		Utils.disableLegacyKeepAlive();
+//
+//	    HttpParams httpParameters = new BasicHttpParams();
+//	    HttpConnectionParams.setConnectionTimeout(httpParameters, 5000);
+//	    HttpConnectionParams.setSoTimeout(httpParameters, 5000);
+//	    HttpClient httpClient = new DefaultHttpClient(httpParameters);
+//	    HttpUriRequest httpUriRequest = null;
+//
+//	    HttpResponse httpResponse = null;
+//
+//		httpUriRequest = new HttpGet(url);
+//		try {
+//			httpResponse = httpClient.execute(httpUriRequest);
+//		} catch (UnknownHostException ex) {
+//			Log.w(TAG, "Unable to connect to REST server.");
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//		return httpResponse;
+//	}
 }

@@ -13,13 +13,14 @@ import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.annotation.TargetApi;
-import android.content.ContentResolver;
 import android.database.Cursor;
 import android.os.Build;
 import android.text.TextUtils;
@@ -83,7 +84,7 @@ public class Utils {
 	 *            The {@link HttpEntity} to be parsed to raw text.
 	 * @return String
 	 * @throws NullPointerException */
-	public static final String toString ( HttpEntity httpEntity ) throws NullPointerException, IllegalStateException, NoSuchElementException, IOException {
+	public static final String toString(HttpEntity httpEntity) throws NullPointerException, IllegalStateException, NoSuchElementException, IOException {
 		return parseInputStream(httpEntity.getContent());
 	}
 
@@ -141,6 +142,51 @@ public class Utils {
 		return null;
 	}
 
+
+
+	/** Logs the schema of the current cursor, but not its data
+	 * (privacy risk should it accidentally reach production.)
+	 * @return void
+	 */
+	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
+	public static final void toLog(String tag, Cursor cursor) {
+		if (null==cursor) {Log.i(tag,"toString(cursor) of null cursor."); return;}
+
+		int len = cursor.getColumnCount();
+		Log.i(TAG, "toString(cursor) of " + len + " columns and " + cursor.getCount() + " rows, currently at position " + cursor.getPosition());
+
+		StringBuilder sb = new StringBuilder();
+
+		for (int j = 0; j < len; j++) {
+			sb.append(' ');
+			sb.append(j);
+			sb.append(' ');
+			sb.append(cursor.getColumnName(j));
+			if (Build.VERSION.SDK_INT > 11) { sb.append(' ').append(cursor.getType(j)); }
+		}
+		Log.i("toString(cursor) " + cursor.getCount() + "columns:", sb.toString());
+	}
+
+	/** @since Aug 29, 2013
+	 * @version Aug 29, 2013
+	 * @return void
+	 */
+	public static final void toLog(String tag, HttpResponse httpResponse) {
+		try {
+			Log.v(tag, httpResponse.getStatusLine().getStatusCode() + httpResponse.getStatusLine().getReasonPhrase());
+		} catch (Exception ex) {}
+
+		Header[] headers = httpResponse.getAllHeaders();
+		for (Header header : headers) {
+			Log.v(tag, header.getName() + ":" + header.getValue());
+		}
+	}
+
+	/** Logs the current thread. */
+	public static final void threax(final String threax){
+		Log.v("threax ","0x"+Long.toHexString(Thread.currentThread().getId())+threax);
+	}
+
 	/** Attempt to close a {@code Closeable}, ignore nulls, catch and log any exception. */
 	public static final boolean closeQuietly(Closeable c){
 		boolean success = false;
@@ -154,34 +200,4 @@ public class Utils {
 		}
 		return success;
 	}
-
-	/** Logs the current thread. */
-	public static final void threax(final String threax){
-		Log.v("threax ","0x"+Long.toHexString(Thread.currentThread().getId())+threax);
-	}
-
-	/** Logs the schema of the current cursor, but not its data
-	 * (privacy risk should it accidentally reach production.)
-	 * @return void
-	 */
-	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
-	public static final void dumpCursorSchema ( Cursor cursor ) {
-		if (null==cursor) {Log.i(TAG,"dump(cursor) of null cursor."); return;}
-
-		int len = cursor.getColumnCount();
-		Log.i(TAG, "dump(cursor) of " + len + " columns and " + cursor.getCount() + " rows, currently at position " + cursor.getPosition());
-
-		StringBuilder sb = new StringBuilder();
-
-		for (int j = 0; j < len; j++) {
-			sb.append(' ');
-			sb.append(j);
-			sb.append(' ');
-			sb.append(cursor.getColumnName(j));
-			if (Build.VERSION.SDK_INT > 11) { sb.append(' ').append(cursor.getType(j)); }
-		}
-		Log.i("dump(cursor) " + cursor.getCount() + "columns:", sb.toString());
-	}
-
-
 }

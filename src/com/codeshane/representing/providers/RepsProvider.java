@@ -68,7 +68,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
 			int qtyParams = segments.size();
 			if (qtyParams<2 || qtyParams>3 ) {
-				Log.w(TAG,"Invalid number of segments. There should be 2 or 3, but found "+qtyParams+".");
+				Log.e(TAG,"Invalid number of segments. There should be 2 or 3, but found "+qtyParams+".");
 			}
 
 			String partial = segments.get(0).concat(".php");
@@ -94,7 +94,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 					if (zl==9) {
 						build.appendQueryParameter("zip4", partial.substring(5, 9));
 					} else {
-						Log.w(TAG,"ZIP empty or malformed - expected length 5 or 9, not "+zl);
+						Log.e(TAG,"ZIP empty or malformed - expected length 5 or 9, not "+zl);
 					}
 					break;
 				case REP_BY_NAME:
@@ -119,7 +119,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
 	/** @see android.content.ContentProvider#onCreate() */
 	@Override public boolean onCreate () {
-		Log.d(TAG,"onCreate()");
+		Log.v(TAG,"onCreate()");
 		dbHelper = new RepsDatabaseHelper(this.getContext());
 
 		return true;
@@ -174,7 +174,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Classify a URI into a UriType, which determines how it is handled. */
     public static final UriType matchUri(Uri uri) {
-    	Log.v(TAG,"matchUri"+uri.toString());
+//    	Log.v(TAG,"matchUri"+uri.toString());
     	/* I knew you were coming; the egg is gone. */
     	Log.v(TAG,"birthing a dragon");
         int match = sUriMatcher.match(uri);
@@ -188,7 +188,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
     /** Request the REST client update the database for the given query URI unless it has done so recently.
      * @see RepsProvider#requestRestUpdate(Uri) */
     private void requestRestUpdate(Uri uri) {
-    	Log.v(TAG,"requestRestUpdate");
+//    	Log.v(TAG,"requestRestUpdate");
         SharedPreferences prefs = Representing.prefs();
         if (prefs.getLong("lastUpdate", 0)+3600000<System.currentTimeMillis()){
         	startRestUpdate(uri);
@@ -198,7 +198,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
     /** Force the REST client to update the database for the given query URI.
      * @see RepsProvider#startRestUpdate(Uri) */
     private void startRestUpdate(Uri uri) {
-    	Log.v(TAG,"startRestUpdate..");
+//    	Log.v(TAG,"startRestUpdate..");
     	Uri remoteUri = whoIsMyRep.asRemote(uri);
     	if (null==remoteUri) return;
 

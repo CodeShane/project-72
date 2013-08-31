@@ -57,12 +57,12 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 
 	/** {@inheritDoc} @see android.support.v4.app.LoaderManager.LoaderCallbacks#onCreateLoader(int, Bundle) */
 	@Override public Loader<Cursor> onCreateLoader ( int loaderId, Bundle loaderArgs ) {
-		Log.v(TAG,"onCreateLoader id#"+loaderId);
+//		Log.v(TAG,"onCreateLoader id#"+loaderId);
 
 		String item_id = loaderArgs.getString(RepsListActivity.ITEM_ID);
 		if (null==item_id) { Log.e(TAG, "item_id=null");} else {Log.v(TAG,"item_id="+item_id);}
 
-        Uri loaderUri = RepsContract.URI_BYZIP.buildUpon().appendPath(item_id).build();
+//        Uri loaderUri = RepsContract.URI_BYZIP.buildUpon().appendPath(item_id).build();
 
         // Now create and return a CursorLoader that will take care of creating a Cursor for the data being displayed.
 

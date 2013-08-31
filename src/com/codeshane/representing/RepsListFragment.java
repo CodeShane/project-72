@@ -134,11 +134,9 @@ public class RepsListFragment extends ListFragment implements LoaderCallbacks<Cu
 						case 9:
 							// .subSequence inclusive, exclusive [3,4] gets char index 3. get m+, not n+.
 							String zz=s.subSequence(0, 5).toString();
-							assert (zz.length()==5);
 							String z4=s.subSequence(5, 9).toString();
-							assert (zz.length()==4);
-							Log.e(TAG+" URI ZZ",zz);
-							Log.e(TAG+" URI Z4",z4);
+//							Log.d(TAG+" URI ZZ",zz);
+//							Log.d(TAG+" URI Z4",z4);
 							params.putString(ZIP_CODE, zz);
 							params.putString(ZIP_CODE_PLUS4, z4);
 							break;
@@ -244,7 +242,7 @@ public class RepsListFragment extends ListFragment implements LoaderCallbacks<Cu
 //				}
 			} // FYI: else { querySelection = null; }
 
-			Log.e(TAG+" URI onCreateLoader querySelection:",querySelection);
+//			Log.v(TAG+" URI onCreateLoader querySelection:",querySelection);
 		} // FYI: else { querySelection = null; }
 
         // Now create and return a CursorLoader that will take care of creating a Cursor for the data being displayed.
@@ -262,12 +260,12 @@ public class RepsListFragment extends ListFragment implements LoaderCallbacks<Cu
 	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
 	@Override public void onLoadFinished ( Loader<Cursor> loader, Cursor cursor ) {
 		try {
-			Log.v(TAG, "onLoadFinished cursor of " + ((null==cursor)?"null":cursor.getCount()) + " rows.");
+//			Log.v(TAG, "onLoadFinished cursor of " + ((null==cursor)?"null":cursor.getCount()) + " rows.");
 			if (cursor!=null) { getListAdapter().swapCursor(cursor); }
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			Log.e(TAG,"swallowed exception, exporting cursor info");
-			if (Representing.DEBUG) { Utils.dumpCursorSchema(cursor); }
+			if (Representing.DEBUG) { Utils.toLog("onLoadFinished",cursor); }
 		}
 	}
 
