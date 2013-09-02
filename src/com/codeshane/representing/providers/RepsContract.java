@@ -39,7 +39,7 @@ public interface RepsContract {
 	public static final String PATH_SEN_STATE = "getall_sens_bystate";
 
 	/** Use URI_BYZIP.buildUpon().appendPath(~zipString~).build() */
-	public static final Uri URI_BYZIP = URI_BASE.buildUpon().appendPath("getall_mems").build();
+	public static final Uri URI_BYZIP = URI_BASE.buildUpon().appendPath(PATH_ZIP).build();
 
 	/** Permission required to save data to this database. */
 	static final String	PERMISSION_SAVE_REPRESENTATIVES	= "com.codeshane.representing.permission.SAVE_REPRESENTATIVES";
@@ -72,14 +72,17 @@ public interface RepsContract {
 
 		public static enum Columns implements Column {
 
-			_id("INTEGER", false), UPDATED("INTEGER", false), NAME("TEXT", true), PARTY("TEXT", false), STATE("TEXT", true),
-			ZIP("TEXT", true), DISTRICT("TEXT", false), PHONE("TEXT", false), OFFICE("TEXT", false), LINK("TEXT", false);
+			_id("INTEGER", Column.PRI_KEY_AUTO, false), UPDATED("INTEGER", null, false), NAME("TEXT", "UNIQUE", true), PARTY("TEXT", null, false), STATE("TEXT", null, true),
+			ZIP("TEXT", null, true), DISTRICT("TEXT", null, false), PHONE("TEXT", null, false), OFFICE("TEXT", null, false), LINK("TEXT", null, false);
 
 			private final String	mType;
+			private final String    mConstraints;
 			private final boolean	mIsIndexed;
 
-			private Columns ( String type, boolean isIndexed ) {
+			private Columns ( String type, String constraints, boolean isIndexed ) {
+				//TODO make constraints a vararg & array, make indexed a constraint
 				mType = type;
+				mConstraints = constraints;
 				mIsIndexed = isIndexed;
 			}
 
@@ -91,7 +94,7 @@ public interface RepsContract {
 			@Override public String getName () { return name(); }
 			@Override public String getType () { return mType; }
 			@Override public boolean isIndexed () { return mIsIndexed; }
-			@Override public String getCreationSuffix () { return (this.equals(_id)) ? Column.PRI_KEY_AUTO: null; }
+			@Override public String getConstraints () { return mConstraints; }
 
 			/** Array of column names. */
 			public static final String[] PROJECTION = new String[Columns.values().length];

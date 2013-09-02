@@ -6,11 +6,11 @@ package com.codeshane.representing;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.view.View;
+import android.support.v7.app.ActionBarActivity;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.codeshane.util.Log;
 import com.codeshane.util.Views;
 
 /** An activity representing a list of Reps. This activity
@@ -27,7 +27,7 @@ import com.codeshane.util.Views;
  * This activity also implements the required {@link RepresentativeListFragment.OnItemSelectedListener}
  * interface
  * to listen for item selections. */
-public class RepsListActivity extends FragmentActivity implements RepsListFragment.OnItemSelectedListener {
+public class RepsListActivity extends ActionBarActivity implements RepsListFragment.OnItemSelectedListener {
 	protected static final String	TAG	= RepsListActivity.class.getSimpleName();
 
 	/* Identifier for the currently selected item */
@@ -45,14 +45,14 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 				// (res/values-large and res/values-sw600dp) for two-pane mode.
 				mTwoPane = true;
 
+
+
 				// In two-pane mode, list items should be given the
 				// 'activated' state when touched.
 				((RepsListFragment) getSupportFragmentManager().findFragmentById(R.id.rep_list)).setActivateOnItemClick(true);
 			}
 
 			TextView empty = (TextView) this.findViewById(android.R.id.empty);
-			View root = this.findViewById(R.id.rep_list);
-			root.setBackgroundResource(android.R.color.darker_gray);
 			Views.setSubdued(empty, 0.8f, true); //TODO find/make a text style
 
 		    // If exposing deep links into your app, handle intents here.
@@ -64,6 +64,7 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 	 * the item with the given ID has been selected. */
 	@Override public void onItemSelected ( String id ) {
 		if (mTwoPane) {
+			Log.v(TAG,"onItemSelected: Item \"" + id + "\" selected in dual-pane (tablet) mode.");
 			// In two-pane mode, show the detail view in this activity by
 			// adding or replacing the detail fragment using a
 			// fragment transaction.
@@ -74,6 +75,7 @@ public class RepsListActivity extends FragmentActivity implements RepsListFragme
 			fragment.setArguments(arguments);
 			getSupportFragmentManager().beginTransaction().replace(R.id.rep_detail_container, fragment).commit();
 		} else {
+			Log.v(TAG,"onItemSelected: Item \"" + id + "\" selected in single-pane mode.");
 			// In single-pane mode, simply start the detail activity
 			// for the selected item ID.
 			Intent detailIntent = new Intent(this, RepDetailActivity.class);

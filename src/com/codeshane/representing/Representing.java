@@ -29,7 +29,7 @@ public class Representing extends Application {
 	 * @DevNote Isn't read from AndroidManifest.xml so when false, {@code if(DEBUG)...} statements can be removed by compiler as dead/unreachable code.</p>
 	 * @DevNote Eclipse generated BuildConfig.DEBUG doesn't work properly.
 	 * */
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 
 	/** Strict mode state.
 	 * <p>Used to test app latency and quickly assess potential ANRs.</p>

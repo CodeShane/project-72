@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rep_detail_fragment"
     style="?android:attr/textAppearanceLarge"
@@ -12,69 +12,86 @@
     tools:context=".RepDetailFragment" >
 
     <TextView
+        android:id="@+id/rep_name_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:text="@string/rep_name_label" />
+
+    <TextView
         android:id="@+id/rep_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/rep_name_label"
         android:text="@string/rep_name"
         android:textIsSelectable="true" />
 
-    <!--
-         <TextView
+    <TextView
         android:id="@+id/rep_party_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/rep_name_label"
         android:text="@string/rep_party_label" />
-    -->
 
     <TextView
         android:id="@+id/rep_party"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_name"
+        android:layout_toRightOf="@id/rep_party_label"
         android:text="@string/rep_party"
         android:textIsSelectable="true" />
 
-    <!--
-         <TextView
+    <TextView
         android:id="@+id/rep_state_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/rep_party_label"
         android:text="@string/rep_state" />
-    -->
 
     <TextView
         android:id="@+id/rep_state"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_party"
+        android:layout_toRightOf="@id/rep_state_label"
         android:text="@string/rep_state"
         android:textIsSelectable="true" />
 
-    <!--
-         <TextView
+    <TextView
         android:id="@+id/rep_zip_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/rep_state_label"
         android:text="@string/rep_state" />
-    -->
 
     <TextView
         android:id="@+id/rep_zip"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_state"
+        android:layout_toRightOf="@id/rep_zip_label"
         android:text="@string/rep_state"
         android:textIsSelectable="true" />
 
-    <!--
-         <TextView
+    <TextView
         android:id="@+id/rep_district_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@id/rep_zip_label"
         android:text="@string/rep_district_label" />
-    -->
 
     <TextView
         android:id="@+id/rep_district"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_zip"
+        android:layout_toRightOf="@id/rep_district_label"
         android:text="@string/rep_district"
         android:textIsSelectable="true" />
 
@@ -82,6 +99,8 @@
         android:id="@+id/rep_phone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_district_label"
+        android:layout_centerHorizontal="true"
         android:layout_gravity="center"
         android:text="@string/rep_phone" />
 
@@ -89,6 +108,8 @@
         android:id="@+id/rep_office"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_phone"
+        android:layout_centerHorizontal="true"
         android:layout_gravity="center"
         android:text="@string/rep_office" />
 
@@ -96,7 +117,9 @@
         android:id="@+id/rep_link"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/rep_office"
+        android:layout_centerHorizontal="true"
         android:layout_gravity="center"
         android:text="@string/rep_link" />
 
-</LinearLayout>
+</RelativeLayout>

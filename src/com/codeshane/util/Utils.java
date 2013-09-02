@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -21,11 +22,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.annotation.TargetApi;
+import android.content.ActivityNotFoundException;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.os.Build;
 import android.text.TextUtils;
-
-import com.codeshane.util.Log;
 
 /** Static parsing and converting utilities.
  *
@@ -125,14 +128,14 @@ public class Utils {
 		return hostParts;
 	}
 
-	/* Returns the first value parameter that isn't null.
+	/** Returns the first value parameter that isn't null.
 	 * <i>Efficiency method to avoid creating an array for varargs when only
 	 * using two arguments (the vast majority of cases.)</i> */
 	public static final <T> T get(final T nullable, T fallback){
 		return (null==nullable)?fallback:nullable;
 	}
 
-	/* Returns the first value parameter that isn't null.
+	/** Returns the first value parameter that isn't null.
 	 * <i>Efficiency method to avoid creating an array for varargs when only
 	 * using two arguments (the vast majority of cases.)</i> */
 	public static final <T> T get(final T... values){
@@ -154,17 +157,22 @@ public class Utils {
 
 		int len = cursor.getColumnCount();
 		Log.i(TAG, "toString(cursor) of " + len + " columns and " + cursor.getCount() + " rows, currently at position " + cursor.getPosition());
+		int prevpos = cursor.getPosition();
+		if(cursor.moveToFirst()){
+			StringBuilder sb = new StringBuilder();
 
-		StringBuilder sb = new StringBuilder();
-
-		for (int j = 0; j < len; j++) {
-			sb.append(' ');
-			sb.append(j);
-			sb.append(' ');
-			sb.append(cursor.getColumnName(j));
-			if (Build.VERSION.SDK_INT > 11) { sb.append(' ').append(cursor.getType(j)); }
+			for (int j = 0; j < len; j++) {
+				sb.append(' ');
+				sb.append(j);
+				sb.append(' ');
+				sb.append(cursor.getColumnName(j));
+				if (Build.VERSION.SDK_INT > 11) { sb.append(' ').append(cursor.getType(j)); }
+			}
+			Log.i("toString(cursor) " + cursor.getCount() + "columns:", sb.toString());
+			cursor.moveToPosition(prevpos);
+		} else {
+			Log.d(TAG,"Unable to cursor.moveToFirst()");
 		}
-		Log.i("toString(cursor) " + cursor.getCount() + "columns:", sb.toString());
 	}
 
 	/** @since Aug 29, 2013
@@ -177,9 +185,26 @@ public class Utils {
 		} catch (Exception ex) {}
 
 		Header[] headers = httpResponse.getAllHeaders();
+		if (null==headers) return;
 		for (Header header : headers) {
 			Log.v(tag, header.getName() + ":" + header.getValue());
 		}
+	}
+
+	/** @since Aug 30, 2013
+	 * @version Aug 30, 2013
+	 * @return void
+	 */
+	@TargetApi ( Build.VERSION_CODES.HONEYCOMB )
+	public static final void toLog(String tag, ContentValues item ) {
+		if (null==item) { Log.v(TAG,"dump(ContentValues) item==null"); return; }
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB) { Log.v(TAG,"toLog(ContentValues) fail (API<11)"); return; }
+		Log.v(TAG,"toLog(ContentValues)..");
+		Set<String> keySet = item.keySet();
+		for (String key: keySet){
+			Log.v(TAG,"dump(ContentValues) item:"+item.getAsString(key));
+		}
+		Log.v(TAG,"..dump(ContentValues)");
 	}
 
 	/** Logs the current thread. */
@@ -199,5 +224,45 @@ public class Utils {
 			ex.printStackTrace();
 		}
 		return success;
+	}
+
+	/** @since Sep 2, 2013
+	 * @version Sep 2, 2013
+	 * @return void
+	 */
+	public static void toLogVerbose ( String tag, Cursor cursor ) {
+		toLog(tag, cursor);
+		int prevpos = cursor.getPosition();
+		Log.v(tag, " cursor count=" + cursor.getCount() + " pos=" + prevpos);
+		int cols = cursor.getColumnCount();
+		if(cursor.moveToFirst()){
+			while (!cursor.isAfterLast()) {
+				StringBuilder sb = new StringBuilder();
+				for (int i=0; i<cols; i++) {
+					sb.append(' ');
+					sb.append(cursor.getString(i));
+				}
+				Log.v(tag,sb.toString());
+				cursor.moveToNext();
+			}
+		} else {
+			Log.v(tag, "unable to cursor.moveToFirst()");
+		}
+
+		cursor.moveToPosition(prevpos);
+	}
+
+	/** @since Sep 2, 2013
+	 * @version Sep 2, 2013
+	 * @return boolean
+	 */
+	public static final boolean activate ( Context c, Intent intent ) {
+	    try {
+	        c.startActivity(intent);
+	        return true;
+	    } catch (ActivityNotFoundException e) {
+	        Log.w(TAG, "No app found for "+Utils.get(intent.getAction(),"?") + " with " + Utils.get(intent.getDataString(),"?"));
+	    }
+		return false;
 	}
 }

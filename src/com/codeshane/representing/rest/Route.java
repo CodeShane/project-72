@@ -7,7 +7,6 @@ package com.codeshane.representing.rest;
 import android.content.ContentProvider;
 import android.net.Uri;
 import android.os.Bundle;
-import com.codeshane.util.Log;
 
 /** A pair of URIs, one representing a local destination / return address, and the other a remote / correspondent.
  * Convenience methods for transmitting in bundles / extras.

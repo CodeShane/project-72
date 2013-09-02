@@ -11,8 +11,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 
 /** Data holder representing a Representative instance. Data can be populated
- * manually, or by a cursor or JSONArray (so long as the received data order
- * doesn't change!)
+ * manually, or by a cursor or JSONObject.
  *
  * @author Shane Ian Robinson <shane@codeshane.com>
  * @since Aug 22, 2013
@@ -104,8 +103,7 @@ public class Rep {
 		contentValues.put("office", office);
 		contentValues.put("phone", phone);
 		contentValues.put("link", link);
-		return null;
-
+		return contentValues;
 	}
 
 

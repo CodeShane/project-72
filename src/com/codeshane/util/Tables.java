@@ -77,11 +77,11 @@ public class Tables {
 		sb = appendColumnStatement(columns[0], sb); // so ", " isn't prepended
 
 		int len = columns.length;
+
 		for (int i = 1; i < len; i++) { // i=1 so that col 0 isn't repeated
 			final Column c = columns[i];
 			sb.append(", ");
 			sb = appendColumnStatement(c, sb);
-			if (null!=c.getCreationSuffix()){ sb.append(' ').append(c.getCreationSuffix()); }
 		}
 		sb.append(");");
 
@@ -100,8 +100,9 @@ public class Tables {
 	public static final StringBuilder appendColumnStatement(Column column, StringBuilder sb) {
 		if (null==sb) sb = new StringBuilder();
 		String name = column.getName();
-		sb.append(name).append(' '); // should be "_id"
-		sb.append(column.getType().toUpperCase(Locale.US)); // must be INTEGER for _id..
+		sb.append(name).append(' ').append(column.getType().toUpperCase(Locale.US));
+		String constraints = column.getConstraints();
+		if (null!=constraints){ sb.append(' ').append(constraints); }
 		return sb;
 	}
 	/** @return StringBuilder the drop table statement */

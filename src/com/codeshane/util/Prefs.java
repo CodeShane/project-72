@@ -25,16 +25,15 @@ public class Prefs {
 	 * */
 	@TargetApi(Build.VERSION_CODES.GINGERBREAD)
 	public static final boolean commit(final SharedPreferences prefs, final SharedPreferences.Editor e) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
+			e.apply();
+			return true;
+		}
+
 		Thread t = new Thread(new Runnable(){
 			@Override public void run () {
 				Log.v(TAG, "commit() runnable.run() starting on " + Thread.currentThread().getName());
-				synchronized(prefs) {
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.GINGERBREAD) {
-						e.apply();
-					} else {
-						e.commit();
-					}
-				}
+				synchronized(prefs) { e.commit(); }
 			}});
 		t.start();
 		return true;

@@ -2,6 +2,7 @@ package com.codeshane.representing.providers;
 
 import static android.content.ContentResolver.CURSOR_DIR_BASE_TYPE;
 import static android.content.ContentResolver.CURSOR_ITEM_BASE_TYPE;
+
 import static com.codeshane.util.DbUtils.addColumnToSelectionArgs;
 import static com.codeshane.util.DbUtils.whereColumn;
 import static com.codeshane.util.DbUtils.whereWithId;
@@ -11,6 +12,7 @@ import static com.codeshane.util.Tables.bulkInsertStatement;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.annotation.TargetApi;
 import android.content.ContentProvider;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
@@ -27,7 +29,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
-
+import android.os.Build;
 import com.codeshane.util.Log;
 import com.codeshane.util.ProviderConstants;
 import com.codeshane.representing.Representing;
@@ -90,9 +92,9 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 					int zl = partial.length();
 					if (zl==5 || zl==9) {
 						build.appendQueryParameter("zip", partial.substring(0, 5));
-					}
-					if (zl==9) {
-						build.appendQueryParameter("zip4", partial.substring(5, 9));
+						if (zl==9) {
+							build.appendQueryParameter("zip4", partial.substring(5, 9));
+						}
 					} else {
 						Log.e(TAG,"ZIP empty or malformed - expected length 5 or 9, not "+zl);
 					}
@@ -113,7 +115,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 		}
 
 		@Override public Uri asLocal ( Uri uri ) {
-			return null;
+			throw new RuntimeException("Not implemented.");
 		}
     };
 
@@ -121,7 +123,6 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 	@Override public boolean onCreate () {
 		Log.v(TAG,"onCreate()");
 		dbHelper = new RepsDatabaseHelper(this.getContext());
-
 		return true;
 	}
 
@@ -174,9 +175,6 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
     /** Classify a URI into a UriType, which determines how it is handled. */
     public static final UriType matchUri(Uri uri) {
-//    	Log.v(TAG,"matchUri"+uri.toString());
-    	/* I knew you were coming; the egg is gone. */
-    	Log.v(TAG,"birthing a dragon");
         int match = sUriMatcher.match(uri);
         if (match < 0) {
         	Log.e(TAG, "Unknown URI "+uri.toString());
@@ -188,17 +186,18 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
     /** Request the REST client update the database for the given query URI unless it has done so recently.
      * @see RepsProvider#requestRestUpdate(Uri) */
     private void requestRestUpdate(Uri uri) {
-//    	Log.v(TAG,"requestRestUpdate");
         SharedPreferences prefs = Representing.prefs();
-        if (prefs.getLong("lastUpdate", 0)+3600000<System.currentTimeMillis()){
-        	startRestUpdate(uri);
-        }
+        if (prefs.getLong("lastUpdate", System.currentTimeMillis())+3600000<System.currentTimeMillis()){
+        	sendRemoteQuery(uri);
+        } else {
+        	Log.v(TAG, "REST already updated.");
+    	}
     }
 
     /** Force the REST client to update the database for the given query URI.
-     * @see RepsProvider#startRestUpdate(Uri) */
-    private void startRestUpdate(Uri uri) {
-//    	Log.v(TAG,"startRestUpdate..");
+     * @see RepsProvider#sendRemoteQuery(Uri) */
+	private void sendRemoteQuery(Uri uri) {
+    	Log.v(TAG,"startRestUpdate..");
     	Uri remoteUri = whoIsMyRep.asRemote(uri);
     	if (null==remoteUri) return;
 
@@ -207,12 +206,26 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
     	.putExtra(Route.EXTRA_URI_LOCAL, uri)
     	.putExtra(Route.EXTRA_URI_REMOTE,  remoteUri)
     	.setClass(this.getContext().getApplicationContext(), RestIntentService.class);
-    	Log.v(TAG,".. taking flight");
+
+    	Log.v(TAG,"startRestUpdate() localUri : " + uri.toString());
+    	Log.v(TAG,"startRestUpdate() remoteUri: " + remoteUri.toString());
 
     	context.startService(requestLatest);
+    	setLastUpdated(System.currentTimeMillis());
     }
 
-    @Override
+	@TargetApi ( Build.VERSION_CODES.GINGERBREAD )
+	public void setLastUpdated ( long currentTimeMillis ) {
+		SharedPreferences.Editor e = Representing.prefs().edit();
+		e.putLong("lastUpdate",System.currentTimeMillis());
+		if (Build.VERSION.SDK_INT<Build.VERSION_CODES.GINGERBREAD){
+			e.apply();
+		} else {
+			e.commit(); //TODO
+		}
+	}
+
+	@Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
         UriType uriType = matchUri(uri);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
@@ -236,20 +249,20 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         return matchUri(uri).getType();
     }
 
-    @Override public Uri insert(Uri uri, ContentValues values) {
+	@Override public Uri insert(Uri uri, ContentValues values) {
         UriType uriType = matchUri(uri);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-        long id;
+        long id = -1;
 
         Uri resultUri;
 
         switch (uriType) {
-            case REP_BY_NAME:
+            case MEMS_BY_ZIP:
             	id = db.insert(uriType.getTable().name(), null, values);
                 resultUri = (id == -1) ? null : ContentUris.withAppendedId(uri, id);
                 break;
             default:
-            	Log.i(TAG, "insert unhandled uriType "+uri.toString());
+            	Log.e(TAG, "insert unhandled uriType "+uri.toString());
             	return null;
         }
 
@@ -321,8 +334,12 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
 //		Normalize the request parameters by type
         switch (uriType) {
+        	case REPS_BY_ID:
+        		selection = whereColumn(Columns._id);
+				selectionArgs = new String[]{uri.getPathSegments().get(0)};
 			case MEMS_BY_ZIP:
 				selection = whereColumn(Columns.ZIP);
+				selectionArgs = new String[]{uri.getQueryParameter("zip")};
 				break;
 			case REP_BY_NAME:
 			case SEN_BY_NAME:
@@ -349,7 +366,7 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
         	ex.printStackTrace();
         }
 
-
+        // Unnecessary in this implementation as the data is only updated from the
         if ((c != null) && !isTemporary()) {
         	// Register the cursor to watch the uri for changes
             c.setNotificationUri(getContext().getContentResolver(), uri);

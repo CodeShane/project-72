@@ -44,35 +44,35 @@ public class WhoIsMyRepresentativeJsonParser {
 
 		ArrayList<Rep> repItems = new ArrayList<Rep>();
 
+		JSONObject jsonRoot = null;
+		JSONArray results = null;
+
 		try {
-			JSONObject jsonRoot = new JSONObject(jsonResult);
-			JSONArray results = jsonRoot.getJSONArray("results");
+			jsonRoot = new JSONObject(jsonResult);
+		} catch (JSONException ex) {}
+		if (null==jsonRoot) { Log.e(TAG, "Couldn't parse received data as json."); return null; }
 
-			for (int i = 0; i < results.length(); i++) {
-				JSONObject item = results.getJSONObject(i);
+		try {
+			results = jsonRoot.getJSONArray("results");
+		} catch (JSONException ex) {}
+		if (null==results) { Log.e(TAG, "Couldn't parse expected \"results\" json array."); return null; }
 
-//				if(i==0){
-//					JSONArray names = item.names();
-//					int q = names.length();
-//					for (int j = 0; j < q; j++) {
-//						Log.i(TAG,"jsonName="+names.optString(j,""));
-//					}
-//				}
+		for (int i = 0; i < results.length(); i++) {
+			JSONObject item = null;
+			try {
+				item = results.getJSONObject(i);
+			} catch (JSONException ex) {}
+			if (null==item) { Log.e(TAG, "Couldn't find expected \'item\' json object."); return null; }
 
-				Rep ri = Rep.update(null,item);
-				if (null!=ri){
-//					Log.i(TAG,"RepItem!!>>>"+ri.toJson()+">>>"+ri.toString());
-					repItems.add(ri);
-					contentValues.add(ri.toContentValues());
-				}
-//				else {
-//					Log.e(TAG, "RepItem didn't hatch..");
-//				}
+			Rep ri = Rep.update(null,item);
+			Log.i(TAG,"ri as string: "+ri.toJson().toString());
 
-			}
-		} catch (JSONException ex) {
-			ex.printStackTrace();
+			repItems.add(ri);
+
+			contentValues.add(ri.toContentValues());
+
 		}
+		Log.v(TAG,repItems.size() + " repItems");
 
 		return contentValues;
 	}

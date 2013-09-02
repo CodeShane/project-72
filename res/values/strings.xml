@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">Project-72</string>
+    <string name="app_name">Who is my representative</string>
     <string name="title_rep_detail">Representative Details</string>
     <string name="action_settings">Settings</string>
     <string name="my_reps">Representatives</string>
@@ -25,6 +25,9 @@
     <string name="edit_text_title">Edit</string>
     <string name="zip_code">zip_code</string>
     <string name="no_results">Sorry, I couldn\'t find any results.</string>
+    <string name="no_dialer">Couldn\'t start dialer.</string>
+    <string name="no_map">Couldn\'t start map.</string>
+    <string name="no_browser">Couldn\'t start browser.</string>
     <string name="no_details">Find your representatives! Just enter your home zip code to get started.</string>
 
 </resources>

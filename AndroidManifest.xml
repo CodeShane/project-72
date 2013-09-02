@@ -10,13 +10,14 @@
 
     <uses-permission android:name="com.codeshane.representing.permission.WRITE_REPRESENTATIVES" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- <uses-permission android:name="android.permission.CALL_PHONE" /> -->
 
     <application
         android:name="com.codeshane.representing.Representing"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/Theme.Base.AppCompat" >
         <activity
             android:name="com.codeshane.representing.RepsListActivity"
             android:label="@string/app_name" >
@@ -25,6 +26,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name="com.codeshane.representing.RepsDetailActivity"
+            android:label="@string/title_rep_detail"
+            android:parentActivityName=".RepsListActivity" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".RepsListActivity" />
         </activity>
 
         <provider

@@ -16,7 +16,8 @@ public interface Column {
 	public static final String PRI_KEY_AUTO = "PRIMARY KEY AUTOINCREMENT";
 
 	/** @return An optional appendix for the sql create table statement part for this column "myname TEXT". May return null. */
-	public String getCreationSuffix();
+	public String getConstraints ();
+//	public String getCreationSuffix();
 
 	/** The column number, or id, identifies the column on a table.
 	 * Column 0 is presumed to be the primary key.
@@ -33,5 +34,6 @@ public interface Column {
 
     /** @return true if the column should be indexed */
     public boolean isIndexed();
+
 
 }
