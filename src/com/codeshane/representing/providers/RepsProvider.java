@@ -2,7 +2,6 @@ package com.codeshane.representing.providers;
 
 import static android.content.ContentResolver.CURSOR_DIR_BASE_TYPE;
 import static android.content.ContentResolver.CURSOR_ITEM_BASE_TYPE;
-
 import static com.codeshane.util.DbUtils.addColumnToSelectionArgs;
 import static com.codeshane.util.DbUtils.whereColumn;
 import static com.codeshane.util.DbUtils.whereWithId;
@@ -25,11 +24,13 @@ import android.content.OperationApplicationException;
 import android.content.SharedPreferences;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteStatement;
 import android.net.Uri;
 import android.os.Build;
+
 import com.codeshane.util.Log;
 import com.codeshane.util.ProviderConstants;
 import com.codeshane.representing.Representing;
@@ -250,6 +251,8 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
     }
 
 	@Override public Uri insert(Uri uri, ContentValues values) {
+		if (null==values || values.size()==0) return null;
+
         UriType uriType = matchUri(uri);
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         long id = -1;
@@ -258,7 +261,15 @@ public final class RepsProvider extends ContentProvider implements RepsContract 
 
         switch (uriType) {
             case MEMS_BY_ZIP:
-            	id = db.insert(uriType.getTable().name(), null, values);
+            	try {
+            		id = db.insert(uriType.getTable().name(), null, values);
+            	} catch (SQLiteConstraintException ex) {
+            		// This person already exists.
+            	} catch (Exception ex) {
+            		//well, that's not good ..
+            		Log.e(TAG, "insert",ex);
+            		return null;
+            	}
                 resultUri = (id == -1) ? null : ContentUris.withAppendedId(uri, id);
                 break;
             default:

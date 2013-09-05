@@ -32,8 +32,7 @@ public class EditTextFragment extends DialogFragment {
 	/** @see android.support.v4.app.DialogFragment#onCreateView(onCreateView, android.view.ViewGroup, android.os.Bundle) */
 	@Override public View onCreateView ( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState ) {
 		View view = inflater.inflate(R.layout.fragment_edit_text, container);
-//		mEditText = (EditText) view.findViewById(android.R.id.edit);
-		return view;
+		return mEditText = (EditText) view.findViewById(android.R.id.edit);
 	}
 
 	/** @see android.support.v4.app.DialogFragment#onCreate(android.os.Bundle) */

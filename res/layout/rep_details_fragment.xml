@@ -9,15 +9,15 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context=".RepDetailFragment" >
+    tools:context="com.codeshane.representing.RepDetailFragment" >
 
     <TextView
         android:id="@+id/rep_name"
+        style="?android:attr/textAppearanceLarge"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/rep_name"
         android:textIsSelectable="true" />
-
     <!--
          <TextView
         android:id="@+id/rep_party_label"
@@ -28,11 +28,11 @@
 
     <TextView
         android:id="@+id/rep_party"
+        style="?android:attr/textAppearanceLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/rep_party"
         android:textIsSelectable="true" />
-
     <!--
          <TextView
         android:id="@+id/rep_state_label"
@@ -43,11 +43,11 @@
 
     <TextView
         android:id="@+id/rep_state"
+        style="?android:attr/textAppearanceLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/rep_state"
         android:textIsSelectable="true" />
-
     <!--
          <TextView
         android:id="@+id/rep_zip_label"
@@ -58,11 +58,11 @@
 
     <TextView
         android:id="@+id/rep_zip"
+        style="?android:attr/textAppearanceLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/rep_state"
         android:textIsSelectable="true" />
-
     <!--
          <TextView
         android:id="@+id/rep_district_label"

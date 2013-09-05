@@ -9,8 +9,6 @@ import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBarActivity;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Toast;
 
 import com.codeshane.util.Log;
 
@@ -32,7 +30,7 @@ public class RepDetailActivity extends ActionBarActivity {
 
 //		if (Build.VERSION.SDK_INT >= 7 ){// Build.VERSION_CODES.HONEYCOMB){
 			// Show the Up button in the action bar.
-			this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+//			this.getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 //		}
 
 		// fragments automatically re-added to its container after config,
@@ -46,22 +44,16 @@ public class RepDetailActivity extends ActionBarActivity {
 			fragment.setArguments(arguments);
 			getSupportFragmentManager().beginTransaction().add(R.id.rep_detail_container, fragment).commit();
 		}
-		View view = findViewById(R.id.rep_detail_container);
-		if (null!=view) {
-			view.setBackgroundResource(android.R.color.darker_gray);
-		} else {
-			Toast.makeText(this, "WTF is this!?", Toast.LENGTH_LONG).show();
-		}
 	}
 
-	@Override public boolean onOptionsItemSelected ( MenuItem item ) {
-		switch (item.getItemId()) {
-			case android.R.id.home: // This ID represents the Home or Up button.
-				// Use NavUtils to allow users to nav up instead of back:
-				// http://developer.android.com/design/patterns/navigation.html#up-vs-back
-				NavUtils.navigateUpTo(this, new Intent(this, RepsListActivity.class));
-				return true;
-		}
-		return super.onOptionsItemSelected(item);
-	}
+//	@Override public boolean onOptionsItemSelected ( MenuItem item ) {
+//		switch (item.getItemId()) {
+//			case android.R.id.home: // This ID represents the Home or Up button.
+//				// Use NavUtils to allow users to nav up instead of back:
+//				// http://developer.android.com/design/patterns/navigation.html#up-vs-back
+//				NavUtils.navigateUpTo(this, new Intent(this, RepsListActivity.class));
+//				return true;
+//		}
+//		return super.onOptionsItemSelected(item);
+//	}
 }

@@ -10,7 +10,8 @@
 
     <uses-permission android:name="com.codeshane.representing.permission.WRITE_REPRESENTATIVES" />
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- <uses-permission android:name="android.permission.CALL_PHONE" /> -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
 
     <application
         android:name="com.codeshane.representing.Representing"
@@ -28,12 +29,12 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.codeshane.representing.RepsDetailActivity"
+            android:name="com.codeshane.representing.RepDetailActivity"
             android:label="@string/title_rep_detail"
             android:parentActivityName=".RepsListActivity" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".RepsListActivity" />
+                android:value="com.codeshane.representing.RepsListActivity" />
         </activity>
 
         <provider

@@ -256,9 +256,9 @@ public class Utils {
 	 * @version Sep 2, 2013
 	 * @return boolean
 	 */
-	public static final boolean activate ( Context c, Intent intent ) {
+	public static final boolean activate ( Context context, Intent intent ) {
 	    try {
-	        c.startActivity(intent);
+	        context.startActivity(intent);
 	        return true;
 	    } catch (ActivityNotFoundException e) {
 	        Log.w(TAG, "No app found for "+Utils.get(intent.getAction(),"?") + " with " + Utils.get(intent.getDataString(),"?"));

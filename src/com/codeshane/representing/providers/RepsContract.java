@@ -72,7 +72,7 @@ public interface RepsContract {
 
 		public static enum Columns implements Column {
 
-			_id("INTEGER", Column.PRI_KEY_AUTO, false), UPDATED("INTEGER", null, false), NAME("TEXT", "UNIQUE", true), PARTY("TEXT", null, false), STATE("TEXT", null, true),
+			_id("INTEGER", Column.PRI_KEY_AUTO, false), UPDATED("INTEGER", null, false), NAME("TEXT", null, true), PARTY("TEXT", null, false), STATE("TEXT", null, true),
 			ZIP("TEXT", null, true), DISTRICT("TEXT", null, false), PHONE("TEXT", null, false), OFFICE("TEXT", null, false), LINK("TEXT", null, false);
 
 			private final String	mType;
@@ -80,7 +80,7 @@ public interface RepsContract {
 			private final boolean	mIsIndexed;
 
 			private Columns ( String type, String constraints, boolean isIndexed ) {
-				//TODO make constraints a vararg & array, make indexed a constraint
+				//TODO make constraints a vararg & array, make "isIndexed" a constraint
 				mType = type;
 				mConstraints = constraints;
 				mIsIndexed = isIndexed;

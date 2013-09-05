@@ -23,4 +23,4 @@ codesign.properties
 target/
 src_dep/
 .settings/
-.externalToolBuilders/org.eclipse.m2e.core.maven2Builder.launch
+.externalToolBuilders/

@@ -17,7 +17,7 @@ import android.database.Cursor;
  * @since Aug 22, 2013
  * @version 1 */
 public class Rep {
-	public static final String	TAG	= Rep.class.getPackage().getName() + "." + Rep.class.getSimpleName();
+	public static final String	TAG	= Rep.class.getSimpleName();
 
 	public static final String[] PROJECTION = {"id", "name", "party", "district", "state", "office", "phone", "link"};
 
@@ -29,8 +29,9 @@ public class Rep {
 	public String office;
 	public String phone;
 	public String link;
+	public long updated;
 
-	public Rep ( long id, String name, String party, String district, String state, String office, String phone, String link ) {
+	public Rep ( long id, String name, String party, String district, String state, String office, String phone, String link, long updated ) {
 		this.id = -1;
 		this.name = name;
 		this.party = party;
@@ -39,6 +40,7 @@ public class Rep {
 		this.office = office;
 		this.phone = phone;
 		this.link = link;
+		this.updated = updated;
 	}
 
 	/** Populates an existing (or new if param is null) RepItem instance with
@@ -49,7 +51,7 @@ public class Rep {
 	public static Rep update ( Rep repItem, Cursor c ) {
 		if (null == repItem) { return new Rep(
 				-1, c.getString(0), c.getString(1), c.getString(2),
-				c.getString(3), c.getString(4), c.getString(5), c.getString(6)); }
+				c.getString(3), c.getString(4), c.getString(5), c.getString(6), c.getLong(7)); }
 		repItem.id = -1;
 		repItem.name = c.getString(0);
 		repItem.party = c.getString(1);
@@ -58,6 +60,7 @@ public class Rep {
 		repItem.office = c.getString(4);
 		repItem.phone = c.getString(5);
 		repItem.link = c.getString(6);
+		repItem.updated = c.getLong(7);
 		return repItem;
 	}
 
@@ -69,7 +72,7 @@ public class Rep {
 		if (null == repItem) { return new Rep(-1,
 			object.optString("name"),  object.optString("party"), object.optString("district"),
 			object.optString("state"), object.optString("office"),
-			object.optString("phone"), object.optString("link"));
+			object.optString("phone"), object.optString("link"), object.optLong("updated"));
 		}
 		repItem.name = object.optString("name", "");
 		repItem.party = object.optString("party", "");
@@ -78,17 +81,18 @@ public class Rep {
 		repItem.office = object.optString("office", "");
 		repItem.phone = object.optString("phone", "");
 		repItem.link = object.optString("link", "");
+		repItem.updated = object.optLong("updated", System.currentTimeMillis());
 		return repItem;
 	}
 
 	@Override public String toString () {
 		return "RepItem [id=" + id + ", name=" + name + ", district=" + district + ", state=" + state + ", office=" + office + ", party=" + party + ", phone="
-			+ phone + ", link=" + link + "]";
+			+ phone + ", link=" + link + ", updated=" + updated + "]";
 	}
 
 	public JSONObject toJson() {
 		try {
-			return new JSONObject().put("id", id).put("name", name).put("party", party).put("district", district).put("state", state).put("office", office).put("phone", phone).put("link", link);
+			return new JSONObject().put("id", id).put("name", name).put("party", party).put("district", district).put("state", state).put("office", office).put("phone", phone).put("link", link).put("updated", updated);
 		} catch (JSONException ex) {
 			throw new RuntimeException(ex);
 		}
@@ -103,8 +107,8 @@ public class Rep {
 		contentValues.put("office", office);
 		contentValues.put("phone", phone);
 		contentValues.put("link", link);
+		contentValues.put("updated", updated);
 		return contentValues;
 	}
-
 
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- reserved ids -->
+    <item name="tag_id_extra" type="id"/>
+
+</resources>

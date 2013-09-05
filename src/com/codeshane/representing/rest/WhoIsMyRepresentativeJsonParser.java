@@ -66,7 +66,6 @@ public class WhoIsMyRepresentativeJsonParser {
 
 			Rep ri = Rep.update(null,item);
 			Log.i(TAG,"ri as string: "+ri.toJson().toString());
-
 			repItems.add(ri);
 
 			contentValues.add(ri.toContentValues());

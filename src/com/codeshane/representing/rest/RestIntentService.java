@@ -7,7 +7,6 @@ package com.codeshane.representing.rest;
 import java.io.InputStream;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Map.Entry;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -26,7 +25,7 @@ import android.content.ContentProviderResult;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.OperationApplicationException;
-import android.content.res.Configuration;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.RemoteException;
@@ -77,11 +76,6 @@ public class RestIntentService extends IntentService {
 		Utils.threax("RestIntentService");
 	}
 
-	/** @see android.app.Service#onConfigurationChanged(android.content.res.Configuration) */
-	@Override public void onConfigurationChanged ( Configuration newConfig ) {
-		super.onConfigurationChanged(newConfig);
-	}
-
 	/** Worker thread for the {@code IntentService}. This particular {@link IntentService} simply executes a rest request,
 	 * parses the result, and pushes changes to the local {@link ContentProvider}. If there are any errors in the process,
 	 * it simply logs the problem and aborts, waiting to be re-queried.
@@ -125,7 +119,7 @@ public class RestIntentService extends IntentService {
 
 
 		/* Generate a ContentProviderOperation for each ContentValues item. */
-		ArrayList<ContentProviderOperation> operations = generateContentProviderOperations(items, route.getLocal());
+		ArrayList<ContentProviderOperation> operations = generateContentProviderOperations(items, route.getLocal(), zip);
 		if (operations.size()==0) { Log.e(TAG,"no operations"); return; }
 		Log.i(TAG,"operations="+operations.size());
 
@@ -135,6 +129,7 @@ public class RestIntentService extends IntentService {
 		if (null==results) { Log.e(TAG, "op results null."); return; }
 		if (0==results.length) { Log.e(TAG, "0 op results."); return; }
 		Log.i(TAG,"onHandleIntent SUCCESS! "+results.length+" results.");
+
 	}
 
 	/** An HttpClient with basic settings.
@@ -164,7 +159,7 @@ public class RestIntentService extends IntentService {
 				Log.w(TAG,"Mocking http response");
 				httpResponse = new MockHttpResponse();
 			} else {
-				Log.w(TAG,"Executing http uri request");
+				Log.i(TAG,"Executing http uri request");
 				httpResponse = httpClient.execute(httpUriRequest);
 			}
 		} catch (UnknownHostException ex) {
@@ -192,7 +187,8 @@ public class RestIntentService extends IntentService {
 		return content;
 	}
 
-	/** Generates the {@code ContentProviderOperation}s to insert {@code ContentValues} into the given {@code ContentProvider} {@code Uri}.
+	/** Generates the {@code ContentProviderOperation}s to insert, update, or delete {@code ContentValues}
+	 * into the given {@code ContentProvider} {@code Uri} necessary to sync downloaded items.
 	 * @param items ArrayList<ContentValues> intended for insertion
 	 * @param insertTo Uri to insert the data to.
 	 * @return ArrayList<ContentProviderOperation>
@@ -201,27 +197,99 @@ public class RestIntentService extends IntentService {
 	 * @see ContentProvider
 	 * @see Uri
 	 *  */
-	private static final ArrayList<ContentProviderOperation> generateContentProviderOperations(ArrayList<ContentValues> items, Uri insertTo){
+	private static final ArrayList<ContentProviderOperation> generateContentProviderOperations(ArrayList<ContentValues> items, Uri insertTo, String zip){
 		ArrayList<ContentProviderOperation> operations = new ArrayList<ContentProviderOperation>();
-		Log.v(TAG, "Generating " + items.size() + " insert operations toward: " + insertTo.toString());
+		Log.v(TAG, "Generating " + items.size() + " operations toward: " + insertTo.toString());
+
+		Cursor results = Representing.context().getContentResolver().query(insertTo, new String[]{"_id","NAME","ZIP"}, "ZIP = ?", new String[]{zip}, null);
+
+		long[] ids 	   = null;
+		String[] names = null;
+		String[] zips  = null;
+
+		if (results.getCount()==0) {
+			return generateInsertOperations(items, insertTo);
+		}
+
+		int c = results.getCount();
+
+		ids = new long[c];
+		names = new String[c];
+		zips = new String[c];
+
+		int j = 0;
+		while (results.moveToNext() && !results.isAfterLast()){
+			ids[j] = results.getLong(0);
+			names[j] = results.getString(1);
+			zips[j] = results.getString(2);
+			j++;
+		}
+
+		ContentProviderOperation.Builder operationBuilder = null;
+
+		items:
+		for (ContentValues item : items) {
+			if (null==item) {
+				Log.e(TAG,"null item");
+				continue;
+			}
+
+			// Check if the rep is already in the table
+			String itemName = item.getAsString("NAME");
+			String itemZip  = item.getAsString("ZIP");
+			for (int i = 0; i < names.length; i++) {
+				if (null==itemName) break;
+				if (null==names[i]) continue;
+				if (itemName.equalsIgnoreCase(names[i]) && itemZip.equalsIgnoreCase(zips[i])) {
+					// update item that is already in database
+					operationBuilder = ContentProviderOperation.newUpdate(insertTo);
+					item.remove("_id");
+					item.put("_id", ids[i]);
+					operationBuilder.withValues(item);
+					operationBuilder.withYieldAllowed(false);
+//					operations.add(operationBuilder.build());
+					names[i] = null;
+					continue items; // move on to the next item
+				} else {
+					// insert item that wasn't in database
+					operationBuilder = ContentProviderOperation.newInsert(insertTo);
+					operationBuilder.withValues(item);
+					operationBuilder.withYieldAllowed(false);
+					operations.add(operationBuilder.build());
+				}
+			}
+
+		}
+
+		/* delete all records that weren't in the latest update */
+		for (String name: names) {
+			operationBuilder = ContentProviderOperation.newDelete(insertTo);
+			operationBuilder.withSelection("name = ?, zip = ?", new String[]{name,zip});
+			operations.add(operationBuilder.build());
+		}
+
+		Log.i(TAG,"operations ="+operations.size()+"+");
+		return operations;
+	}
+
+	/** @since Sep 3, 2013
+	 * @version Sep 3, 2013
+	 * @return final ArrayList<ContentProviderOperation>
+	 */
+	private static final ArrayList<ContentProviderOperation> generateInsertOperations ( ArrayList<ContentValues> items, Uri insertTo ) {
+		ArrayList<ContentProviderOperation> insertOperations = new ArrayList<ContentProviderOperation>();
 
 		for (ContentValues item : items) {
-			if (null!=item) {
-				ContentProviderOperation.Builder c = ContentProviderOperation.newInsert(insertTo);
-				c.withValues(item).withYieldAllowed(true);
-				operations.add(c.build());
-
-				String cols = new String();
-				for (Entry<String, Object> entry : item.valueSet()) {
-					cols += entry.getKey() + ", ";
-				}
-				Log.v(TAG, "added item with cols: " + cols);
-			} else {
+			if (null==item) {
 				Log.e(TAG,"null item");
+				continue;
 			}
-			Log.i(TAG,"operations ="+operations.size()+"+");
+
+			ContentProviderOperation.Builder builder = ContentProviderOperation.newInsert(insertTo).withValues(item).withYieldAllowed(false);
+			insertOperations.add(builder.build());
 		}
-		return operations;
+		Log.i(TAG,"insertOperations ="+insertOperations.size()+"+");
+		return insertOperations;
 	}
 
 	private static final ContentProviderResult[] executeContentProviderOperations(ArrayList<ContentProviderOperation> operations){
@@ -229,9 +297,6 @@ public class RestIntentService extends IntentService {
 		ContentProviderResult[] results = null;
 		try {
 			results = Representing.context().getContentResolver().applyBatch(RepsContract.AUTHORITY, operations);
-			for (ContentProviderResult r : results) {
-				Log.v(TAG, "Results! " + r.count + " to " + r.uri.toString());
-			}
 		} catch (RemoteException ex) {
 			ex.printStackTrace();
 		} catch (OperationApplicationException ex) {

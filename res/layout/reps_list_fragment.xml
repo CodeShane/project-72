@@ -6,6 +6,6 @@
     android:layout_height="match_parent"
     android:layout_marginLeft="16dp"
     android:layout_marginRight="16dp"
-    tools:context=".MainListActivity"
-    tools:layout="@android:layout/list_content" />
+    tools:context="com.codeshane.representing.RepsListActivity"
+    tools:layout="@layout/list_content" />
 

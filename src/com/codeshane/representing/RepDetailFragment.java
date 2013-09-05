@@ -7,6 +7,7 @@ package com.codeshane.representing;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager.LoaderCallbacks;
@@ -18,6 +19,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +28,7 @@ import com.codeshane.representing.providers.Rep;
 import com.codeshane.representing.providers.RepsContract;
 import com.codeshane.representing.providers.RepsContract.Tables.Columns;
 import com.codeshane.util.DbUtils;
+import com.codeshane.util.Device;
 import com.codeshane.util.Utils;
 
 /** A fragment representing a single Rep detail screen.
@@ -37,9 +41,8 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 
 	/** This identifier is to be used with view.setTag/view.getTag
 	 * for storing a button intent extra, type-specific to each button's purpose. */
-	protected static final int	TAG_ID_EXTRA	= 12;
 
-	View     rep_layout;
+	LinearLayout rep_layout;
 	TextView rep_name;
 	TextView rep_party;
 	TextView rep_state;
@@ -61,35 +64,48 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 		super.onActivityCreated(savedInstanceState);
 	}
 
+	/** @see android.support.v4.app.Fragment#onViewCreated(android.view.View, android.os.Bundle) */
+	@Override public void onViewCreated ( View view, Bundle savedInstanceState ) {
+		super.onViewCreated(view, savedInstanceState);
+		Log.i("onViewCreated","Device.SUPPORTS_API_13__HONEYCOMB_3_2 = " + Device.SUPPORTS_API_13__HONEYCOMB_3_2);
+		Log.i("onViewCreated","Current Device  Build.VERSION.SDK_INT = " + Build.VERSION.SDK_INT);
+	}
+
 	/** Inflate the view layout and show the current data. */
 	@Override public View onCreateView ( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState ) {
 		Log.v(TAG,"onCreateView");
+//		if (null==container) { Log.w(TAG,"null container."); return null; }
+		if (null!=rep_layout) { Log.w(TAG,"overwriting retained layout."); }
 
-		if (null!=rep_layout) return rep_layout;
-		rep_layout = inflater.inflate(R.layout.rep_detail_fragment, container, false);
+		rep_layout = (LinearLayout) inflater.inflate(R.layout.rep_details_fragment, container, false);
 		rep_name = (TextView) rep_layout.findViewById(R.id.rep_name);
 		rep_party = (TextView) rep_layout.findViewById(R.id.rep_party);
 		rep_state = (TextView) rep_layout.findViewById(R.id.rep_state);
 		rep_zip = (TextView) rep_layout.findViewById(R.id.rep_zip);
 		rep_district = (TextView) rep_layout.findViewById(R.id.rep_district);
+
 		rep_phone = (TextView) rep_layout.findViewById(R.id.rep_phone);
 		((Button)rep_phone).setOnClickListener(new OnClickListener(){
 			@Override public void onClick ( View v ) {
-				String phone = (String) v.getTag(TAG_ID_EXTRA);
+				String phone = (String) v.getTag(R.id.tag_id_extra);
 				if (null==phone) return;
-			    Intent intent = new Intent(Intent.ACTION_CALL).setData(Uri.parse("tel:".concat(phone)));
+				Uri uri = Uri.parse("tel:".concat(phone));
+				Log.v(TAG,uri.toString());
+			    Intent intent = new Intent(Intent.ACTION_CALL).setData(uri);
 			    boolean success = Utils.activate(getActivity(),intent);
 			    if (!success) {
 			    	Toast.makeText(getActivity(), getActivity().getString(R.string.no_dialer), Toast.LENGTH_LONG).show();
 			    }
 			}
 		});
+
 		rep_office = (TextView) rep_layout.findViewById(R.id.rep_office);
 		((Button)rep_office).setOnClickListener(new OnClickListener(){
 			@Override public void onClick ( View v ) {
-				String office = (String) v.getTag(TAG_ID_EXTRA);
+				String office = (String) v.getTag(R.id.tag_id_extra);
 				if (null==office) return;
-				Uri uri = Uri.parse("geo:0,0").buildUpon().appendQueryParameter("q", office.replace(" ", "+")).build();
+				Uri uri = Uri.parse("geo:0,0").buildUpon().appendQueryParameter("q", office).build(); //.replace(' ', '+')
+				Log.v(TAG,uri.toString());
 				Intent intent = new Intent(Intent.ACTION_VIEW, uri);
 			    boolean success = Utils.activate(getActivity(),intent);
 			    if (!success) {
@@ -97,12 +113,15 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 			    }
 			}
 		});
+
 		rep_link = (TextView) rep_layout.findViewById(R.id.rep_link);
-		((Button)rep_office).setOnClickListener(new OnClickListener(){
+		((Button)rep_link).setOnClickListener(new OnClickListener(){
 			@Override public void onClick ( View v ) {
-				String link = (String) v.getTag(TAG_ID_EXTRA);
+				String link = (String) v.getTag(R.id.tag_id_extra);
 				if (null==link) return;
-				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+				Uri uri = Uri.parse(link);
+				Log.v(TAG,uri.toString());
+				Intent intent = new Intent(Intent.ACTION_VIEW, uri);
 			    boolean success = Utils.activate(getActivity(),intent);
 			    if (!success) {
 			    	Toast.makeText(getActivity(), getActivity().getString(R.string.no_browser), Toast.LENGTH_LONG).show();
@@ -117,8 +136,8 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 	/** {@inheritDoc} @see android.support.v4.app.LoaderManager.LoaderCallbacks#onCreateLoader(int, Bundle) */
 	@Override public Loader<Cursor> onCreateLoader ( int loaderId, Bundle loaderArgs ) {
 		Log.v(TAG,"onCreateLoader id#"+loaderId);
-		Toast.makeText(this.getActivity(), "onCreateLoader()", Toast.LENGTH_SHORT).show();
 		String item_id = Utils.get(loaderArgs.getString(RepsListActivity.ITEM_ID),"");
+
 		if ("".equalsIgnoreCase(item_id)) {
 			Log.e(TAG, "item_id=\"\"");
 		} else {
@@ -138,26 +157,11 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 
 	/** {@inheritDoc} @see android.support.v4.app.LoaderManager.LoaderCallbacks#onLoaderReset(Loader) */
 	@Override public void onLoaderReset ( Loader<Cursor> loader ) { /*mAdapter.swapCursor(null);*/ }
+
 	/** {@inheritDoc} @see android.support.v4.app.LoaderManager.LoaderCallbacks#onLoadFinished(Loader, Object) */
 	@Override public void onLoadFinished ( Loader<Cursor> loader, Cursor cursor ) {
-		if (cursor.getCount()==1) {
-			Log.v(TAG,"onLoadFinished " + cursor.getCount() + " rows.");
-		} else {
-			Log.e(TAG,"onLoadFinished " + cursor.getCount() + " rows.");
-		}
-		// won't do much good to try loading row -1..
-		Log.v(TAG,"cursor.moveToFirst()? " + cursor.moveToFirst());
-//		mAdapter.swapCursor(cursor);
-		if (!cursor.moveToFirst()) {
-			Log.e(TAG,"!cursor.moveToFirst()");	return;
-		}
-		if (null==rep_layout){
-			Log.e(TAG,"null==rep_layout");
-			rep_layout.setEnabled(false);
-			return;
-		}
-		rep_layout.setEnabled(true);
-
+		if (null==rep_layout){ Log.e(TAG,"null==rep_layout"); return; }
+		if (!cursor.moveToFirst()) { Log.w(TAG,"!cursor.moveToFirst()"); return; }
 		rep_name.setText(cursor.getString(2));
 		rep_party.setText(cursor.getString(3));
 		rep_state.setText(cursor.getString(4));
@@ -165,15 +169,12 @@ public class RepDetailFragment extends Fragment implements LoaderCallbacks<Curso
 		rep_district.setText(cursor.getString(6));
 		String phone = cursor.getString(7);
 		rep_phone.setText(phone);
-		rep_phone.setTag(phone);
+		rep_phone.setTag(R.id.tag_id_extra,phone);
 		String office = cursor.getString(8);
 		rep_office.setText(office);
-		rep_office.setTag(office);
+		rep_office.setTag(R.id.tag_id_extra,office);
 		String link = cursor.getString(9);
 		rep_link.setText(link);
-		rep_link.setTag(link);
-
+		rep_link.setTag(R.id.tag_id_extra,link);
 	}
-
-
 }

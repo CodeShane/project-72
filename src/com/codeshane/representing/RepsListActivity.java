@@ -7,11 +7,10 @@ package com.codeshane.representing;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
-import android.widget.EditText;
-import android.widget.TextView;
+import android.view.Menu;
+import android.view.View;
 
 import com.codeshane.util.Log;
-import com.codeshane.util.Views;
 
 /** An activity representing a list of Reps. This activity
  * has different presentations for handset and tablet-size devices. On
@@ -45,20 +44,55 @@ public class RepsListActivity extends ActionBarActivity implements RepsListFragm
 				// (res/values-large and res/values-sw600dp) for two-pane mode.
 				mTwoPane = true;
 
-
-
 				// In two-pane mode, list items should be given the
 				// 'activated' state when touched.
 				((RepsListFragment) getSupportFragmentManager().findFragmentById(R.id.rep_list)).setActivateOnItemClick(true);
 			}
 
-			TextView empty = (TextView) this.findViewById(android.R.id.empty);
-			Views.setSubdued(empty, 0.8f, true); //TODO find/make a text style
-
 		    // If exposing deep links into your app, handle intents here.
 	}
 
-	EditText editZip;
+	/** @see android.support.v7.app.ActionBarActivity#onBackPressed() */
+	@Override public void onBackPressed () {
+		super.onBackPressed();
+		Log.v(TAG,"onBackPressed");
+	}
+
+	/** @see android.support.v7.app.ActionBarActivity#onCreatePanelView(int) */
+	@Override public View onCreatePanelView ( int featureId ) {
+		Log.v(TAG,"onCreatePanelView");
+		return super.onCreatePanelView(featureId);
+	}
+
+	/** @see android.support.v7.app.ActionBarActivity#onPostResume() */
+	@Override protected void onPostResume () {
+		Log.v(TAG,"onPostResume");
+		super.onPostResume();
+	}
+
+	/** @see android.support.v7.app.ActionBarActivity#onPreparePanel(int, android.view.View, android.view.Menu) */
+	@Override public boolean onPreparePanel ( int featureId, View view, Menu menu ) {
+		Log.v(TAG,"onPreparePanel");
+		return super.onPreparePanel(featureId, view, menu);
+	}
+
+	/** @see android.support.v4.app.FragmentActivity#onPause() */
+	@Override protected void onPause () {
+		Log.v(TAG,"onPause");
+		super.onPause();
+	}
+
+	/** @see android.support.v4.app.FragmentActivity#onResume() */
+	@Override protected void onResume () {
+		Log.v(TAG,"onResume");
+		super.onResume();
+	}
+
+	/** @see android.support.v4.app.FragmentActivity#onResumeFragments() */
+	@Override protected void onResumeFragments () {
+		Log.v(TAG,"onResumeFragments");
+		super.onResumeFragments();
+	}
 
 	/** Callback method from {@link RepresentativeListFragment.OnItemSelectedListener} indicating that
 	 * the item with the given ID has been selected. */

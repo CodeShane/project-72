@@ -7,7 +7,7 @@
     android:baselineAligned="false"
     android:orientation="horizontal"
     android:showDividers="middle"
-    tools:context=".RepsListActivity" >
+    tools:context="com.codeshane.representing.RepsListActivity" >
 
     <!--
     This layout is a two-pane layout for the Reps
